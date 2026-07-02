@@ -1,0 +1,363 @@
+/* ---------- Stat cards ---------- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 22px;
+}
+.stat-card {
+  background: #fff;
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+.stat-card.feature {
+  background: linear-gradient(150deg, var(--green-600), var(--green-800));
+  color: #fff;
+  box-shadow: 0 16px 36px rgba(47, 107, 74, 0.4);
+}
+.stat-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stat-ic {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+}
+.ic-green {
+  background: var(--green-100);
+  color: var(--green-700);
+}
+.feature .ic-green {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.ic-blue {
+  background: var(--blue-bg);
+  color: var(--blue);
+}
+.ic-purple {
+  background: var(--purple-bg);
+  color: var(--purple);
+}
+.ic-orange {
+  background: var(--orange-bg);
+  color: var(--orange);
+}
+.stat-label {
+  font-weight: 600;
+  font-size: 14px;
+  flex: 1;
+}
+.stat-arrow {
+  opacity: 0.6;
+}
+.feature .stat-arrow {
+  opacity: 0.9;
+}
+.stat-body {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+}
+.stat-value {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.stat-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+.stat-delta.up {
+  color: var(--green-700);
+}
+.stat-delta.down {
+  color: var(--red);
+}
+.feature .stat-delta {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* ---------- Grids ---------- */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+.grid-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1fr;
+  gap: 20px;
+}
+
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.chart-headline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.big-num {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- Donut ---------- */
+.donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.lg-label {
+  font-weight: 600;
+  font-size: 13.5px;
+  flex: 1;
+}
+.lg-val {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+/* ---------- Top products / lists ---------- */
+.emoji-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: var(--green-50);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.emoji-box.sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  font-size: 17px;
+}
+.top-list,
+.low-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.top-list li,
+.low-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 14px;
+  transition: background 0.15s ease;
+}
+.top-list li:hover,
+.low-list li:hover {
+  background: var(--green-50);
+}
+.rank {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: var(--green-100);
+  color: var(--green-800);
+  font-weight: 700;
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.tp-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tp-name {
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tp-sold {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.tp-rev {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* ---------- Table ---------- */
+.table-scroll {
+  overflow-x: auto;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.data-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--muted);
+  padding: 0 14px 12px;
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  white-space: nowrap;
+}
+.cell-prod {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+.amt {
+  font-weight: 700;
+}
+
+/* ---------- Inventory health ---------- */
+.health-bar {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.health-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--green-500), var(--green-700));
+}
+.health-cap {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 16px;
+}
+
+/* ---------- Empty states ---------- */
+.empty-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 16px;
+  color: var(--muted);
+  text-align: center;
+}
+.empty-block svg {
+  color: var(--green-400);
+}
+.empty-block p {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+/* ---------- Export grid (Reports) ---------- */
+.export-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.export-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 22px;
+  border-radius: 16px;
+  background: var(--bg-soft);
+  border: 1.5px solid var(--line-2);
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  transition: all 0.15s ease;
+}
+.export-btn:hover {
+  border-color: var(--green-400);
+  background: var(--green-50);
+  color: var(--green-800);
+}
+.export-btn svg {
+  color: var(--green-600);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1280px) {
+  .grid-bottom {
+    grid-template-columns: 1fr 1fr;
+  }
+  .health-card {
+    grid-column: span 2;
+  }
+}
+@media (max-width: 1100px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+  .grid-bottom {
+    grid-template-columns: 1fr;
+  }
+  .health-card {
+    grid-column: auto;
+  }
+}

@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// DistributeIQ — each signed-in user owns exactly one store document tree
+// at /stores/{uid} and everything beneath it. No cross-store access.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /stores/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      match /{sub=**} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+  }
+}
