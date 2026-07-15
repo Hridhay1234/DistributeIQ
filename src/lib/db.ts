@@ -1,9 +1,11 @@
 import {
   addDoc,
   collection,
+  deleteField,
   doc,
   getDoc,
   getDocs,
+  limit,
   onSnapshot,
   orderBy,
   query,
@@ -13,17 +15,19 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './firebase'
+import { CATALOG } from '../data/catalog'
 import type {
   Bill,
   BillLine,
+  CatalogItem,
+  DiscountType,
+  ItemDiscount,
   Preferences,
   Product,
   Sale,
-  SaleItem,
+  SaleInput,
   StoreProfile,
 } from './types'
-
-const DAY = 86_400_000
 
 /* ---------------- refs ---------------- */
 const storeRef = (uid: string) => doc(db, 'stores', uid)
@@ -31,6 +35,13 @@ const productsCol = (uid: string) => collection(db, 'stores', uid, 'products')
 const salesCol = (uid: string) => collection(db, 'stores', uid, 'sales')
 const billsCol = (uid: string) => collection(db, 'stores', uid, 'bills')
 const snapshotsCol = (uid: string) => collection(db, 'stores', uid, 'snapshots')
+const catalogCol = () => collection(db, 'catalog')
+
+export const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
 
 /* ---------------- store profile ---------------- */
 export async function getStore(uid: string): Promise<StoreProfile | null> {
@@ -59,6 +70,17 @@ export async function updatePreferences(
   prefs: Preferences,
 ): Promise<void> {
   await updateDoc(storeRef(uid), { preferences: prefs })
+}
+
+/** Save (or clear) a remembered per-product discount default. */
+export async function setItemDiscount(
+  uid: string,
+  key: string,
+  disc: ItemDiscount | null,
+): Promise<void> {
+  await updateDoc(storeRef(uid), {
+    [`itemDiscounts.${key}`]: disc ?? deleteField(),
+  })
 }
 
 /* ---------------- products ---------------- */
@@ -99,17 +121,51 @@ export function subscribeSales(
   )
 }
 
+/** Resolve a discount input into a rupee amount, clamped to [0, subtotal]. */
+export function resolveDiscount(
+  subtotal: number,
+  type?: DiscountType,
+  value?: number,
+): number {
+  if (!type || !value || value <= 0) return 0
+  const raw = type === 'percent' ? (subtotal * value) / 100 : value
+  return Math.min(Math.max(0, Math.round(raw)), subtotal)
+}
+
 /**
- * Record a sales log AND decrement the sold units from product stock,
- * atomically via a batch.
+ * Record a sales log with per-line discounts AND decrement the sold units
+ * from product stock, atomically via a batch. Line discounts are resolved
+ * here so totals are trustworthy regardless of client state.
  */
 export async function addSale(
   uid: string,
-  items: SaleItem[],
-  customer?: string,
+  input: SaleInput,
 ): Promise<void> {
-  const totalUnits = items.reduce((s, i) => s + i.qty, 0)
-  const totalValue = items.reduce((s, i) => s + i.qty * i.price, 0)
+  const { customer } = input
+
+  let subtotal = 0
+  let discountAmount = 0
+  let totalCost = 0
+  let totalUnits = 0
+
+  const items = input.items.map((it) => {
+    const lineSub = it.qty * it.price
+    const lineDisc = resolveDiscount(lineSub, it.discountType, it.discountValue)
+    subtotal += lineSub
+    discountAmount += lineDisc
+    totalCost += it.qty * (it.cost ?? 0)
+    totalUnits += it.qty
+    return {
+      ...it,
+      discountAmount: lineDisc,
+      // strip undefined discount fields so Firestore accepts the doc
+      ...(it.discountType && lineDisc > 0
+        ? { discountType: it.discountType, discountValue: it.discountValue ?? 0 }
+        : { discountType: null, discountValue: null }),
+    }
+  })
+
+  const totalValue = subtotal - discountAmount
 
   const batch = writeBatch(db)
   const saleDoc = doc(salesCol(uid))
@@ -117,6 +173,9 @@ export async function addSale(
     date: Date.now(),
     items,
     totalUnits,
+    subtotal,
+    totalCost,
+    discountAmount,
     totalValue,
     ...(customer ? { customer } : {}),
   })
@@ -126,7 +185,7 @@ export async function addSale(
   const stockMap = new Map(
     stockSnap.docs.map((d) => [d.id, (d.data() as Product).stock ?? 0]),
   )
-  for (const it of items) {
+  for (const it of input.items) {
     if (stockMap.has(it.productId)) {
       const next = Math.max(0, (stockMap.get(it.productId) ?? 0) - it.qty)
       batch.update(doc(productsCol(uid), it.productId), { stock: next })
@@ -214,22 +273,56 @@ export async function saveSnapshot(
   })
 }
 
-/* ---------------- onboarding / seeding ---------------- */
+/* ---------------- shared catalogue ---------------- */
+export function subscribeCatalog(
+  cb: (items: CatalogItem[]) => void,
+): Unsubscribe {
+  return onSnapshot(query(catalogCol(), orderBy('name')), (snap) =>
+    cb(
+      snap.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<CatalogItem, 'id'>),
+      })),
+    ),
+  )
+}
+
+export async function addCatalogItem(
+  item: Omit<CatalogItem, 'id'>,
+): Promise<string> {
+  const ref = await addDoc(catalogCol(), item)
+  return ref.id
+}
 
 /**
- * Create the store profile, seed selected starter products, and generate
- * ~10 days of sample sales + a couple of bills so the dashboard isn't empty.
+ * Seed the global catalogue from the bundled list — only if it's empty.
+ * Uses slug doc-ids so repeated seeds are idempotent (no duplicates).
  */
-export async function seedStore(
-  uid: string,
-  profile: Omit<StoreProfile, 'onboarded' | 'createdAt'>,
-  selected: Omit<Product, 'id'>[],
-): Promise<void> {
+export async function seedCatalogIfEmpty(): Promise<void> {
+  const existing = await getDocs(query(catalogCol(), limit(1)))
+  if (!existing.empty) return
   const batch = writeBatch(db)
+  for (const item of CATALOG) {
+    batch.set(doc(catalogCol(), slugify(item.name)), item)
+  }
+  await batch.commit()
+}
 
-  batch.set(storeRef(uid), {
+/* ---------------- onboarding ---------------- */
+
+/**
+ * Create the store profile only. No sample products, sales, or bills are
+ * written — the store starts empty and the owner fills it via bill scans,
+ * manual product adds, and daily sales logs.
+ */
+export async function createStore(
+  uid: string,
+  profile: Omit<StoreProfile, 'onboarded' | 'createdAt' | 'tourCompleted'>,
+): Promise<void> {
+  await setDoc(storeRef(uid), {
     ...profile,
     onboarded: true,
+    tourCompleted: false,
     createdAt: Date.now(),
     preferences: {
       lowStockAlerts: true,
@@ -238,83 +331,4 @@ export async function seedStore(
       hindiUi: false,
     },
   } satisfies StoreProfile)
-
-  // seed products (capture their generated ids for sample sales)
-  const seeded: ({ id: string } & Omit<Product, 'id'>)[] = selected.map((p) => {
-    const ref = doc(productsCol(uid))
-    batch.set(ref, p)
-    return { id: ref.id, ...p }
-  })
-
-  // sample sales for the last 10 days
-  if (seeded.length) {
-    const today = new Date()
-    today.setHours(12, 0, 0, 0)
-    for (let d = 9; d >= 0; d--) {
-      const ts = today.getTime() - d * DAY
-      const weekend = [0, 6].includes(new Date(ts).getDay())
-      const lineCount = 3 + Math.floor(Math.random() * 4)
-      const picks = [...seeded]
-        .sort(() => Math.random() - 0.5)
-        .slice(0, lineCount)
-      const items: SaleItem[] = picks.map((p) => ({
-        productId: p.id,
-        name: p.name,
-        emoji: p.emoji,
-        category: p.category,
-        qty:
-          1 +
-          Math.floor(Math.random() * (weekend ? 16 : 9)) +
-          (p.price < 30 ? 4 : 0),
-        price: p.price,
-      }))
-      const totalUnits = items.reduce((s, i) => s + i.qty, 0)
-      const totalValue = items.reduce((s, i) => s + i.qty * i.price, 0)
-      const saleDoc = doc(salesCol(uid))
-      batch.set(saleDoc, {
-        date: ts,
-        items,
-        totalUnits,
-        totalValue,
-        customer: SAMPLE_CUSTOMERS[d % SAMPLE_CUSTOMERS.length],
-      })
-    }
-
-    // a couple of sample supplier bills
-    for (let b = 0; b < 3; b++) {
-      const picks = [...seeded]
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 4)
-      const lines = picks.map((p) => ({
-        name: p.name,
-        emoji: p.emoji,
-        qty: 12 + Math.floor(Math.random() * 24),
-        cost: p.cost,
-      }))
-      const billDoc = doc(billsCol(uid))
-      batch.set(billDoc, {
-        supplier: SAMPLE_SUPPLIERS[b % SAMPLE_SUPPLIERS.length],
-        date: today.getTime() - (b * 3 + 1) * DAY,
-        lines,
-        totalUnits: lines.reduce((s, l) => s + l.qty, 0),
-        total: lines.reduce((s, l) => s + l.qty * l.cost, 0),
-      })
-    }
-  }
-
-  await batch.commit()
 }
-
-const SAMPLE_CUSTOMERS = [
-  'Ramesh K.',
-  'Sunita W.',
-  'Imran S.',
-  'James D.',
-  'Meena R.',
-  'Walk-in',
-]
-const SAMPLE_SUPPLIERS = [
-  'Krishna Distributors',
-  'Shree Traders',
-  'Metro Wholesale',
-]

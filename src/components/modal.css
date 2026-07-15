@@ -1,0 +1,87 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 22, 16, 0.5);
+  backdrop-filter: blur(3px);
+  display: grid;
+  place-items: center;
+  z-index: 150;
+  padding: 20px;
+  animation: fadeIn 0.15s ease both;
+}
+.modal {
+  background: #fff;
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 24px 12px;
+}
+.modal-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 10px 24px 8px;
+}
+.mf {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mf-wide {
+  grid-column: span 2;
+}
+.mf-emoji {
+  max-width: 90px;
+}
+.mf > span {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.mf input,
+.mf select {
+  border: 1.5px solid var(--line-2);
+  border-radius: 12px;
+  padding: 11px 13px;
+  font-size: 14.5px;
+  background: var(--bg-soft);
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.mf input:focus,
+.mf select:focus {
+  border-color: var(--green-500);
+  background: #fff;
+}
+.modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px 22px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 560px) {
+  .modal-body {
+    grid-template-columns: 1fr;
+  }
+  .mf-wide {
+    grid-column: auto;
+  }
+}

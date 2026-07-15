@@ -1,20 +1,28 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Topbar from '../components/Topbar'
 import Icon, { type IconName } from '../components/Icon'
 import Sparkline from '../components/Sparkline'
 import LineChart from '../components/charts/LineChart'
 import DonutChart from '../components/charts/DonutChart'
+import Tour from '../components/Tour'
 import { useData } from '../context/DataContext'
 import { computeAnalytics } from '../lib/analytics'
 import { formatINR } from '../data/mock'
 import './dashboard.css'
 
 export default function Dashboard() {
-  const { products, sales, bills, store } = useData()
+  const { products, sales, bills, store, updateStore } = useData()
   const a = useMemo(
     () => computeAnalytics(products, sales, bills),
     [products, sales, bills],
   )
+
+  const [tourDismissed, setTourDismissed] = useState(false)
+  const showTour = Boolean(store && !store.tourCompleted) && !tourDismissed
+  const finishTour = () => {
+    setTourDismissed(true)
+    updateStore({ tourCompleted: true }).catch(() => {})
+  }
 
   const stats: {
     label: string
@@ -71,6 +79,7 @@ export default function Dashboard() {
 
   return (
     <>
+      {showTour && <Tour onDone={finishTour} />}
       <Topbar
         title="Dashboard Overview"
         subtitle={`Welcome back, ${firstName} — here's your store today`}

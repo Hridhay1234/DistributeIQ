@@ -1,0 +1,156 @@
+.receipt-shell {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.receipt {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: var(--shadow-lg);
+  padding: 26px 24px;
+  font-variant-numeric: tabular-nums;
+}
+.rcpt-head {
+  text-align: center;
+  padding-bottom: 16px;
+  border-bottom: 2px dashed var(--line-2);
+}
+.rcpt-logo {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--green-500), var(--green-800));
+  color: #fff;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 10px;
+}
+.rcpt-head h2 {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.rcpt-addr {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin: 3px 0 0;
+}
+.rcpt-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding: 14px 0;
+  border-bottom: 1px dashed var(--line-2);
+}
+.rcpt-meta div {
+  display: flex;
+  flex-direction: column;
+}
+.rcpt-meta span {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.rcpt-meta strong {
+  font-size: 13.5px;
+}
+.rcpt-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+}
+.rcpt-table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  padding: 6px 4px;
+  text-align: center;
+  border-bottom: 1px solid var(--line-2);
+}
+.rcpt-table td {
+  padding: 7px 4px;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+}
+.rcpt-table .l {
+  text-align: left;
+}
+.rcpt-table .r {
+  text-align: right;
+  font-weight: 600;
+}
+.rcpt-totals {
+  padding-top: 10px;
+}
+.rcpt-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+  padding: 4px 0;
+}
+.rcpt-row.disc span:last-child {
+  color: var(--orange);
+}
+.rcpt-row.grand {
+  font-size: 18px;
+  font-weight: 800;
+  border-top: 2px dashed var(--line-2);
+  margin-top: 8px;
+  padding-top: 12px;
+}
+.rcpt-row.grand span:last-child {
+  color: var(--green-800);
+}
+.rcpt-foot {
+  text-align: center;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 2px dashed var(--line-2);
+}
+.rcpt-foot p {
+  margin: 0;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.rcpt-powered {
+  color: var(--muted);
+  font-weight: 500 !important;
+  font-size: 11.5px !important;
+  margin-top: 4px !important;
+}
+.receipt-actions {
+  display: flex;
+  gap: 10px;
+}
+.receipt-actions .btn {
+  flex: 1;
+}
+
+/* ---------- Print: show only the receipt ---------- */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #receipt-print,
+  #receipt-print * {
+    visibility: visible;
+  }
+  #receipt-print {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 24px;
+    max-width: none;
+  }
+  .receipt-actions {
+    display: none;
+  }
+}

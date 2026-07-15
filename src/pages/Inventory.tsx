@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import Topbar from '../components/Topbar'
 import Icon from '../components/Icon'
+import AddProductModal from '../components/AddProductModal'
 import { useData } from '../context/DataContext'
 import { CATEGORIES, formatINR } from '../data/mock'
 import type { Product } from '../lib/types'
@@ -9,10 +10,11 @@ import './inventory.css'
 type Filter = 'All' | 'Low stock' | (typeof CATEGORIES)[number]
 
 export default function Inventory() {
-  const { products, setProductStock, saveSnapshot } = useData()
+  const { products, setProductStock, saveSnapshot, addProduct } = useData()
   const [filter, setFilter] = useState<Filter>('All')
   const [draft, setDraft] = useState<Record<string, number>>({})
   const [snapSaved, setSnapSaved] = useState(false)
+  const [adding, setAdding] = useState(false)
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   const stockOf = (p: Product) => draft[p.id] ?? p.stock
@@ -128,7 +130,31 @@ export default function Inventory() {
             )}
           </button>
         ))}
+        <button className="add-product-btn" onClick={() => setAdding(true)}>
+          <Icon name="plus" size={16} /> Add product
+        </button>
       </div>
+
+      {adding && (
+        <AddProductModal
+          mode="inventory"
+          onClose={() => setAdding(false)}
+          onSave={async (p) => {
+            await addProduct({
+              name: p.name,
+              brand: p.brand,
+              emoji: p.emoji,
+              category: p.category,
+              price: p.price,
+              cost: p.cost,
+              stock: p.stock,
+              lowStockAt: p.lowStockAt,
+              unit: p.unit,
+            })
+            setAdding(false)
+          }}
+        />
+      )}
 
       {products.length === 0 ? (
         <div className="empty-block">

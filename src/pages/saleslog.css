@@ -35,6 +35,46 @@
   display: grid;
   place-items: center;
 }
+.sl-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 12px;
+  background: var(--green-100);
+  color: var(--green-800);
+  font-weight: 700;
+  font-size: 13.5px;
+  flex-shrink: 0;
+}
+.sl-add:hover {
+  background: var(--green-200);
+}
+
+/* category filter chips */
+.sl-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.sl-cat {
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink-2);
+  transition: all 0.15s ease;
+}
+.sl-cat:hover {
+  color: var(--green-800);
+}
+.sl-cat.on {
+  background: linear-gradient(135deg, var(--green-600), var(--green-800));
+  color: #fff;
+}
 
 .sl-list {
   display: flex;
@@ -62,6 +102,12 @@
   display: flex;
   flex-direction: column;
 }
+.sl-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 .sl-name {
   font-weight: 700;
   font-size: 15px;
@@ -69,6 +115,80 @@
 .sl-sub {
   font-size: 13px;
   color: var(--muted);
+}
+
+/* per-item discount pill (beside the name) */
+.sl-disc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px dashed var(--line-2);
+  background: var(--bg-soft);
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 11.5px;
+  transition: all 0.15s ease;
+}
+.sl-disc-pill:hover {
+  border-color: var(--green-400);
+  color: var(--green-800);
+}
+.sl-disc-pill.set {
+  background: var(--green-100);
+  border-style: solid;
+  border-color: var(--green-300);
+  color: var(--green-800);
+}
+.sl-disc-pill.active {
+  border-color: var(--green-600);
+  color: var(--green-900);
+}
+.sl-disc-saved {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green-600);
+}
+
+/* inline discount editor */
+.sl-disc-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.sl-disc-editor .disc-input-wrap {
+  width: 96px;
+  padding: 7px 10px;
+  margin: 0;
+}
+.disc-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--green-600), var(--green-800));
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+}
+.disc-remove {
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: var(--red);
+  font-weight: 700;
+  font-size: 13px;
+}
+.disc-remove:hover {
+  background: var(--red-bg);
+}
+.tp-disc {
+  color: var(--orange);
+  font-weight: 700;
 }
 
 .stepper {
@@ -174,10 +294,81 @@
 .sum-row.total {
   font-size: 19px;
   font-weight: 800;
-  margin: 8px 0 16px;
+  margin: 8px 0 6px;
 }
 .sum-row.total span:last-child {
   color: var(--green-800);
+}
+.sum-row.disc span:last-child {
+  color: var(--orange);
+}
+.sum-row.profit {
+  font-size: 14px;
+  padding-top: 8px;
+  margin-bottom: 14px;
+  border-top: 1px dashed var(--line-2);
+}
+.sum-row.profit.up span:last-child {
+  color: var(--green-700);
+}
+.sum-row.profit.down span:last-child {
+  color: var(--red);
+}
+
+/* Discount controls (shared by the per-item editor) */
+.disc-toggle {
+  display: inline-flex;
+  background: #fff;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.disc-toggle button {
+  width: 38px;
+  padding: 6px 0;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--muted);
+}
+.disc-toggle button.on {
+  background: var(--green-600);
+  color: #fff;
+}
+.disc-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+.disc-affix {
+  font-weight: 700;
+  color: var(--muted);
+}
+.disc-input-wrap input {
+  border: none;
+  outline: none;
+  background: transparent;
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 0;
+}
+.sum-records-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 12px;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--green-700);
+}
+.sum-records-link:hover {
+  color: var(--green-900);
 }
 
 @media (max-width: 980px) {

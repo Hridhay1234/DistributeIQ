@@ -2,9 +2,11 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { DataProvider } from './context/DataContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import SalesLog from './pages/SalesLog'
+import SalesRecords from './pages/SalesRecords'
 import Inventory from './pages/Inventory'
 import BillScan from './pages/BillScan'
 import Reports from './pages/Reports'
@@ -17,11 +19,13 @@ export default function App() {
       <DataProvider>
         <HashRouter>
           <Routes>
-            <Route path="/" element={<Login />} />
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/app" element={<ProtectedRoute />}>
               <Route index element={<Navigate to="/app/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="sales" element={<SalesLog />} />
+              <Route path="records" element={<SalesRecords />} />
               <Route path="inventory" element={<Inventory />} />
               <Route path="scan" element={<BillScan />} />
               <Route path="reports" element={<Reports />} />

@@ -41,6 +41,10 @@
   align-items: center;
   gap: 13px;
 }
+.ab-home {
+  align-self: flex-start;
+  cursor: pointer;
+}
 .brand-mark.lg {
   width: 48px;
   height: 48px;

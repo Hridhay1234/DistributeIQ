@@ -6,6 +6,7 @@ import './layout.css'
 const mainNav: { to: string; label: string; icon: IconName }[] = [
   { to: '/app/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { to: '/app/sales', label: 'Daily Sales', icon: 'sales' },
+  { to: '/app/records', label: 'Sales Records', icon: 'receipt' },
   { to: '/app/inventory', label: 'Shelf Count', icon: 'inventory' },
   { to: '/app/scan', label: 'Bill Scan', icon: 'scan' },
   { to: '/app/reports', label: 'Reports', icon: 'reports' },
@@ -22,7 +23,7 @@ const bottomNav: { to: string; label: string; icon: IconName }[] = [
   { to: '/app/sales', label: 'Sales', icon: 'sales' },
   { to: '/app/scan', label: 'Scan', icon: 'scan' },
   { to: '/app/inventory', label: 'Stock', icon: 'inventory' },
-  { to: '/app/reports', label: 'Reports', icon: 'reports' },
+  { to: '/app/records', label: 'Records', icon: 'receipt' },
 ]
 
 function Brand() {
@@ -60,6 +61,7 @@ export default function Layout() {
             <NavLink
               key={n.to}
               to={n.to}
+              data-tour={n.to.split('/').pop()}
               className={({ isActive }) =>
                 'nav-item' + (isActive ? ' active' : '')
               }

@@ -4,7 +4,6 @@ import Icon from '../components/Icon'
 import Splash from '../components/Splash'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
-import { STARTER_PRODUCTS } from '../data/mock'
 import './login.css'
 
 function GoogleG({ size = 20 }: { size?: number }) {
@@ -23,12 +22,9 @@ const STEP_LABELS = ['Sign in', 'Set up store']
 export default function Login() {
   const navigate = useNavigate()
   const { user, authLoading, configured, error, signInWithGoogle } = useAuth()
-  const { onboarded, loading, seedStore } = useData()
+  const { onboarded, loading, createStore } = useData()
 
   const [storeName, setStoreName] = useState('')
-  const [selected, setSelected] = useState<string[]>(
-    STARTER_PRODUCTS.map((s) => s.name),
-  )
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -46,25 +42,16 @@ export default function Login() {
 
   const step: 0 | 1 = user && !onboarded ? 1 : 0
 
-  const toggle = (name: string) =>
-    setSelected((s) =>
-      s.includes(name) ? s.filter((x) => x !== name) : [...s, name],
-    )
-
   const finishSetup = async () => {
     if (!user) return
     setSaving(true)
     try {
-      const products = STARTER_PRODUCTS.filter((p) => selected.includes(p.name))
-      await seedStore(
-        {
-          storeName: storeName.trim() || 'My Store',
-          ownerName: user.displayName ?? 'Store Owner',
-          email: user.email ?? '',
-          photoURL: user.photoURL ?? '',
-        },
-        products,
-      )
+      await createStore({
+        storeName: storeName.trim() || 'My Store',
+        ownerName: user.displayName ?? 'Store Owner',
+        email: user.email ?? '',
+        photoURL: user.photoURL ?? '',
+      })
       navigate('/app/dashboard')
     } finally {
       setSaving(false)
@@ -77,12 +64,12 @@ export default function Login() {
       <div className="auth-brand">
         <div className="ab-glow ab-glow-1" />
         <div className="ab-glow ab-glow-2" />
-        <div className="ab-top">
+        <button className="ab-top ab-home" onClick={() => navigate('/')}>
           <div className="brand-mark lg">
             <Icon name="store" size={26} strokeWidth={2.2} />
           </div>
           <span className="ab-name">DistributeIQ</span>
-        </div>
+        </button>
 
         <div className="ab-mid">
           <h1>Run your kirana like a pro.</h1>
@@ -165,50 +152,24 @@ export default function Login() {
 
               {step === 1 && (
                 <div className="af-body fade-up">
-                  <h2>Set up your store</h2>
+                  <h2>Name your store</h2>
                   <p className="af-sub">
-                    Welcome, {user?.displayName?.split(' ')[0] ?? 'there'}!
-                    We've pre-loaded common Indian SKUs — untap any you don't
-                    stock.
+                    Welcome, {user?.displayName?.split(' ')[0] ?? 'there'}! Your
+                    store starts empty — you'll add products by scanning a bill
+                    or adding them yourself. We'll show you how.
                   </p>
                   <label className="field">
                     <span>Store name</span>
                     <div className="input-wrap">
                       <Icon name="store" size={18} />
                       <input
+                        autoFocus
                         placeholder="e.g. Sharma General Store"
                         value={storeName}
                         onChange={(e) => setStoreName(e.target.value)}
                       />
                     </div>
                   </label>
-
-                  <div className="sku-head">
-                    <span>Starter catalogue</span>
-                    <span className="sku-count">
-                      {selected.length} selected
-                    </span>
-                  </div>
-                  <div className="sku-grid">
-                    {STARTER_PRODUCTS.map((s) => {
-                      const on = selected.includes(s.name)
-                      return (
-                        <button
-                          key={s.name}
-                          className={'sku-chip' + (on ? ' on' : '')}
-                          onClick={() => toggle(s.name)}
-                        >
-                          <span className="sku-emoji">{s.emoji}</span>
-                          {s.name}
-                          {on && (
-                            <span className="sku-check">
-                              <Icon name="check" size={12} />
-                            </span>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
 
                   <button
                     className="btn btn-primary block"
@@ -219,7 +180,7 @@ export default function Login() {
                       'Setting up…'
                     ) : (
                       <>
-                        Open my dashboard{' '}
+                        Enter my dashboard{' '}
                         <Icon name="arrow-up-right" size={18} />
                       </>
                     )}

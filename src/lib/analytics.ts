@@ -86,6 +86,11 @@ export type Analytics = {
   billCount: number
   avgBasket: number
   estProfit7d: number
+  profitDelta: { delta: number; up: boolean }
+  revenueAll: number
+  costAll: number
+  profitAll: number
+  marginPct: number
   trend: DayPoint[]
   sparkRevenue: number[]
   sparkUnits: number[]
@@ -151,15 +156,30 @@ export function computeAnalytics(
     }))
   const categoryTotal = categorySplit.reduce((s, c) => s + c.value, 0)
 
-  // estimated profit (last 7 days) from per-item margin
+  // ---- profit / loss (from buying vs selling prices) ----
   const priceCost = new Map(products.map((p) => [p.id, p.cost]))
-  let estProfit7d = 0
-  for (const s of weekSales) {
-    for (const it of s.items) {
-      const cost = priceCost.get(it.productId) ?? it.price * 0.85
-      estProfit7d += it.qty * (it.price - cost)
-    }
+  // Cost of a sale: prefer the stored totalCost, else sum per-item cost with
+  // fallbacks for older sales that predate the cost field.
+  const saleCostOf = (s: Sale) => {
+    if (typeof s.totalCost === 'number') return s.totalCost
+    return s.items.reduce(
+      (c, it) =>
+        c + it.qty * (it.cost ?? priceCost.get(it.productId) ?? it.price * 0.85),
+      0,
+    )
   }
+  const saleProfitOf = (s: Sale) => s.totalValue - saleCostOf(s)
+
+  const estProfit7d = weekSales.reduce((p, s) => p + saleProfitOf(s), 0)
+  const prevWeekSales = sales.filter(
+    (s) => s.date >= prevWeekStart && s.date < weekAgo,
+  )
+  const prevProfit = prevWeekSales.reduce((p, s) => p + saleProfitOf(s), 0)
+
+  const revenueAll = sales.reduce((s2, s) => s2 + s.totalValue, 0)
+  const costAll = sales.reduce((s2, s) => s2 + saleCostOf(s), 0)
+  const profitAll = revenueAll - costAll
+  const marginPct = revenueAll > 0 ? (profitAll / revenueAll) * 100 : 0
 
   // top products (all time)
   const topMap = new Map<string, TopProduct>()
@@ -202,6 +222,11 @@ export function computeAnalytics(
     billCount: bills.length,
     avgBasket,
     estProfit7d: Math.round(estProfit7d),
+    profitDelta: pctDelta(estProfit7d, prevProfit),
+    revenueAll: Math.round(revenueAll),
+    costAll: Math.round(costAll),
+    profitAll: Math.round(profitAll),
+    marginPct: Math.round(marginPct * 10) / 10,
     trend: dailyRevenue(sales, 7),
     sparkRevenue: dailyRevenue(sales, 9).map((d) => d.value),
     sparkUnits: dailyUnits(sales, 9),

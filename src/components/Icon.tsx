@@ -47,6 +47,9 @@ export type IconName =
   | 'menu'
   | 'image'
   | 'refresh'
+  | 'receipt'
+  | 'percent'
+  | 'wallet'
 
 const paths: Record<IconName, string> = {
   dashboard:
@@ -110,6 +113,11 @@ const paths: Record<IconName, string> = {
     'M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM8.5 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM21 15l-5-5L5 21',
   refresh:
     'M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15',
+  receipt:
+    'M5 2v20l2.5-1.5L10 22l2-1.5L14 22l2.5-1.5L19 22V2l-2.5 1.5L14 2l-2 1.5L10 2 7.5 3.5zM8 7h8M8 11h8M8 15h5',
+  percent: 'M19 5L5 19M6.5 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM17.5 20a2.5 2.5 0 100-5 2.5 2.5 0 000 5z',
+  wallet:
+    'M21 12V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2v-3M21 12h-5a2 2 0 000 4h5a1 1 0 001-1v-2a1 1 0 00-1-1z',
 }
 
 const filled: Partial<Record<IconName, boolean>> = {

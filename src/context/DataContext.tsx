@@ -8,32 +8,50 @@ import {
 } from 'react'
 import { useAuth } from './AuthContext'
 import * as dbApi from '../lib/db'
+import { CATALOG } from '../data/catalog'
 import type {
   Bill,
   BillLine,
+  CatalogItem,
+  ItemDiscount,
   Preferences,
   Product,
   Sale,
-  SaleItem,
+  SaleInput,
   StoreProfile,
 } from '../lib/types'
+
+// Offline fallback catalogue (used until the Firestore catalogue subscription
+// resolves / seeds). Stable ids derived from the name.
+const FALLBACK_CATALOG: CatalogItem[] = CATALOG.map((c) => ({
+  ...c,
+  id:
+    'seed-' +
+    c.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, ''),
+}))
 
 type DataValue = {
   store: StoreProfile | null
   products: Product[]
   sales: Sale[]
   bills: Bill[]
+  catalog: CatalogItem[]
   loading: boolean
   onboarded: boolean
   // mutations
-  seedStore: (
-    profile: Omit<StoreProfile, 'onboarded' | 'createdAt'>,
-    selected: Omit<Product, 'id'>[],
+  createStore: (
+    profile: Omit<StoreProfile, 'onboarded' | 'createdAt' | 'tourCompleted'>,
   ) => Promise<void>
   updateStore: (patch: Partial<StoreProfile>) => Promise<void>
   updatePreferences: (prefs: Preferences) => Promise<void>
+  setItemDiscount: (key: string, disc: ItemDiscount | null) => Promise<void>
+  addProduct: (product: Omit<Product, 'id'>) => Promise<string>
+  addCatalogItem: (item: Omit<CatalogItem, 'id'>) => Promise<string>
   setProductStock: (id: string, stock: number) => Promise<void>
-  addSale: (items: SaleItem[], customer?: string) => Promise<void>
+  addSale: (input: SaleInput) => Promise<void>
   applyBill: (
     supplier: string,
     lines: (BillLine & { productId?: string; category?: string })[],
@@ -51,7 +69,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([])
   const [sales, setSales] = useState<Sale[]>([])
   const [bills, setBills] = useState<Bill[]>([])
+  const [fsCatalog, setFsCatalog] = useState<CatalogItem[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Global catalogue: subscribe + seed once if empty (independent of store).
+  useEffect(() => {
+    if (!uid) return
+    const unsub = dbApi.subscribeCatalog(setFsCatalog)
+    dbApi.seedCatalogIfEmpty().catch(() => {})
+    return () => unsub()
+  }, [uid])
 
   useEffect(() => {
     if (!uid) {
@@ -89,23 +116,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return () => unsubs.forEach((u) => u())
   }, [uid])
 
+  const catalog = fsCatalog.length ? fsCatalog : FALLBACK_CATALOG
+
   const value = useMemo<DataValue>(
     () => ({
       store,
       products,
       sales,
       bills,
+      catalog,
       loading,
       onboarded: Boolean(store?.onboarded),
-      seedStore: (profile, selected) => dbApi.seedStore(uid!, profile, selected),
+      createStore: (profile) => dbApi.createStore(uid!, profile),
       updateStore: (patch) => dbApi.updateStore(uid!, patch),
       updatePreferences: (prefs) => dbApi.updatePreferences(uid!, prefs),
+      setItemDiscount: (key, disc) => dbApi.setItemDiscount(uid!, key, disc),
+      addProduct: (product) => dbApi.addProduct(uid!, product),
+      addCatalogItem: (item) => dbApi.addCatalogItem(item),
       setProductStock: (id, stock) => dbApi.setProductStock(uid!, id, stock),
-      addSale: (items, customer) => dbApi.addSale(uid!, items, customer),
+      addSale: (input) => dbApi.addSale(uid!, input),
       applyBill: (supplier, lines) => dbApi.applyBill(uid!, supplier, lines),
       saveSnapshot: () => dbApi.saveSnapshot(uid!, products),
     }),
-    [store, products, sales, bills, loading, uid],
+    [store, products, sales, bills, catalog, loading, uid],
   )
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
