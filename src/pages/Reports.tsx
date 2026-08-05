@@ -140,7 +140,7 @@ export default function Reports() {
         </article>
       </section>
 
-      <section className="grid-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
+      <section className="grid-2 grid-even">
         <article className="card">
           <div className="card-head">
             <h2 className="section-title">Best Sellers</h2>

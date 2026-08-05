@@ -24,6 +24,92 @@
   justify-content: space-between;
   padding: 22px 24px 12px;
 }
+/* ---------- Add-by-photo ---------- */
+.scan-product {
+  margin: 8px 24px 4px;
+  padding: 14px;
+  border: 1px dashed var(--green-300);
+  border-radius: 16px;
+  background: var(--green-50);
+}
+.sp-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.sp-ic {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--green-500), var(--green-800));
+  color: #fff;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.sp-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.sp-copy strong {
+  font-size: 14.5px;
+}
+.sp-copy span {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.sp-preview {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  max-height: 180px;
+}
+.sp-preview img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  background: #fff;
+  display: block;
+}
+.sp-scanning {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 30, 22, 0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.sp-spin {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+}
+.sp-actions {
+  display: flex;
+  gap: 10px;
+}
+.sp-btn {
+  flex: 1;
+  padding: 11px;
+  font-size: 14px;
+}
+.sp-error {
+  margin: 10px 0 0;
+  color: var(--red);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
 .modal-body {
   display: grid;
   grid-template-columns: 1fr 1fr;

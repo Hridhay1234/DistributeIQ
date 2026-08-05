@@ -101,6 +101,9 @@
   grid-template-columns: 1fr 1.5fr 1fr;
   gap: 20px;
 }
+.grid-2.grid-even {
+  grid-template-columns: 1fr 1fr;
+}
 
 .card-head {
   display: flex;
@@ -346,7 +349,8 @@
   .stat-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .grid-2 {
+  .grid-2,
+  .grid-2.grid-even {
     grid-template-columns: 1fr;
   }
 }

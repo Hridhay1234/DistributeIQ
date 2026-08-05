@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Icon from './Icon'
 import { CATEGORIES } from '../data/mock'
+import { fileToDataUrl, isGroqConfigured, scanProduct } from '../lib/groq'
 import './modal.css'
 
 export type ProductFormData = {
@@ -40,9 +41,40 @@ export default function AddProductModal({
     unit: 'pc',
   })
   const [saving, setSaving] = useState(false)
+  const [scanning, setScanning] = useState(false)
+  const [scanError, setScanError] = useState('')
+  const [photo, setPhoto] = useState<string | null>(null)
+  const cameraInput = useRef<HTMLInputElement>(null)
+  const galleryInput = useRef<HTMLInputElement>(null)
 
   const set = (k: keyof typeof form, v: string) =>
     setForm((f) => ({ ...f, [k]: v }))
+
+  const onImage = async (file?: File) => {
+    if (!file) return
+    setScanError('')
+    setScanning(true)
+    try {
+      const dataUrl = await fileToDataUrl(file)
+      setPhoto(dataUrl)
+      const g = await scanProduct(dataUrl)
+      setForm((f) => ({
+        ...f,
+        name: g.name,
+        brand: g.brand || f.brand,
+        emoji: g.emoji || f.emoji,
+        category: g.category,
+        unit: g.unit || f.unit,
+        price: g.price ? String(g.price) : f.price,
+      }))
+    } catch (e) {
+      setScanError(
+        e instanceof Error ? e.message : 'Could not read that photo.',
+      )
+    } finally {
+      setScanning(false)
+    }
+  }
 
   const valid = form.name.trim() && Number(form.price) > 0
 
@@ -77,6 +109,69 @@ export default function AddProductModal({
             <Icon name="close" size={18} />
           </button>
         </div>
+
+        {isGroqConfigured && (
+          <div className="scan-product">
+            <input
+              ref={cameraInput}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              hidden
+              onChange={(e) => onImage(e.target.files?.[0])}
+            />
+            <input
+              ref={galleryInput}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => onImage(e.target.files?.[0])}
+            />
+
+            {photo ? (
+              <div className="sp-preview">
+                <img src={photo} alt="product" />
+                {scanning && (
+                  <div className="sp-scanning">
+                    <span className="sp-spin" />
+                    Identifying…
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="sp-cta">
+                <span className="sp-ic">
+                  <Icon name="camera" size={22} />
+                </span>
+                <div className="sp-copy">
+                  <strong>Add by photo</strong>
+                  <span>Snap the product — AI fills the details</span>
+                </div>
+              </div>
+            )}
+
+            <div className="sp-actions">
+              <button
+                type="button"
+                className="btn btn-primary sp-btn"
+                onClick={() => cameraInput.current?.click()}
+                disabled={scanning}
+              >
+                <Icon name="camera" size={16} />
+                {scanning ? 'Scanning…' : 'Camera'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline sp-btn"
+                onClick={() => galleryInput.current?.click()}
+                disabled={scanning}
+              >
+                <Icon name="image" size={16} /> Upload
+              </button>
+            </div>
+            {scanError && <p className="sp-error">{scanError}</p>}
+          </div>
+        )}
 
         <div className="modal-body">
           <label className="mf mf-wide">

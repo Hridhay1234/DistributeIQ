@@ -705,3 +705,48 @@
     position: static;
   }
 }
+
+@media (max-width: 560px) {
+  .scan-tabs {
+    display: flex;
+    width: 100%;
+  }
+  .scan-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+  .scan-rail {
+    gap: 4px;
+    font-size: 12px;
+  }
+  .rail-step {
+    gap: 5px;
+  }
+  .rail-line {
+    width: 14px;
+    margin-left: 4px;
+  }
+  /* stack each parsed line so nothing gets clipped */
+  .review-row {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  .rr-meta {
+    flex: 1 1 calc(100% - 54px);
+  }
+  .rr-qty {
+    margin-left: 54px;
+  }
+  .rr-cost {
+    margin-left: auto;
+  }
+  .dz-ic {
+    width: 68px;
+    height: 68px;
+  }
+  .bill-total {
+    font-size: 15px;
+  }
+}

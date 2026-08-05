@@ -254,3 +254,37 @@
     display: none;
   }
 }
+
+@media (max-width: 680px) {
+  .main {
+    padding: 18px 14px 104px;
+  }
+  .topbar {
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .h-title {
+    font-size: 21px;
+  }
+  .topbar-titles .sub {
+    font-size: 12.5px;
+  }
+  .user-meta {
+    display: none;
+  }
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 380px) {
+  .bn-item span {
+    font-size: 10px;
+  }
+}

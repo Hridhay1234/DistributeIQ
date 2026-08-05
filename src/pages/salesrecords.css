@@ -186,9 +186,11 @@
 .rec-body {
   padding: 4px 18px 18px;
   border-top: 1px dashed var(--line-2);
+  overflow-x: auto;
 }
 .rec-table {
   width: 100%;
+  min-width: 340px;
   border-collapse: collapse;
   font-size: 13.5px;
   margin: 8px 0 14px;
@@ -249,20 +251,37 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
-@media (max-width: 720px) {
-  .rec-bill-btn span,
+@media (max-width: 640px) {
+  /* let the row wrap: emoji + meta on line 1, amounts + actions on line 2 */
+  .rec-head {
+    flex-wrap: wrap;
+    row-gap: 10px;
+    padding: 14px;
+  }
+  .rec-meta {
+    flex: 1 1 auto;
+  }
+  .rec-head > svg {
+    order: 3;
+  }
   .rec-amounts {
-    display: none;
+    order: 4;
+    flex: 1;
+    align-items: flex-start;
+    flex-direction: row;
+    gap: 8px;
+    align-items: baseline;
   }
   .rec-bill-btn {
-    padding: 8px;
+    order: 5;
+    margin-left: auto;
   }
 }
-@media (max-width: 520px) {
+@media (max-width: 460px) {
   .pnl-grid {
     grid-template-columns: 1fr;
   }
-  .rec-amounts {
-    display: flex;
+  .pnl-card {
+    padding: 16px;
   }
 }

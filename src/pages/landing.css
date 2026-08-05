@@ -590,15 +590,28 @@
     display: none;
   }
   .lp-hero {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     padding: 40px 20px;
     gap: 60px;
   }
+  .lp-hero-visual,
+  .lp-mock {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .lp-mock-stat {
+    min-width: 0;
+  }
+  .lp-mock-stat svg {
+    max-width: 40%;
+    height: auto;
+  }
   .lp-hero-copy h1 {
     font-size: 38px;
+    overflow-wrap: anywhere;
   }
   .lp-stats {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     padding: 20px;
     gap: 24px;
   }
@@ -624,5 +637,49 @@
   .lp-footer {
     flex-direction: column;
     text-align: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .lp-nav {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+  .lp-brand {
+    font-size: 17px;
+  }
+  .lp-mark {
+    width: 32px;
+    height: 32px;
+  }
+  .lp-signin {
+    display: none;
+  }
+  .lp-cta-sm {
+    padding: 9px 14px;
+    font-size: 13px;
+  }
+  /* decorative floating cards off on phones to avoid clipping */
+  .lp-float {
+    display: none;
+  }
+  .lp-hero {
+    padding: 28px 18px 48px;
+    gap: 40px;
+  }
+  .lp-hero-copy h1 {
+    font-size: 30px;
+  }
+  .lp-hero-copy > p {
+    font-size: 15.5px;
+  }
+  .lp-hero-actions .btn {
+    flex: 1;
+  }
+  .lp-stat-value {
+    font-size: 26px;
+  }
+  .lp-mock-value {
+    font-size: 24px;
   }
 }
