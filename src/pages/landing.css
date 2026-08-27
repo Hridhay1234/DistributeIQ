@@ -85,18 +85,6 @@
   margin: 0 auto;
   padding: 70px 40px 60px;
 }
-.lp-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: var(--green-100);
-  color: var(--green-800);
-  font-weight: 700;
-  font-size: 13px;
-  padding: 7px 14px;
-  border-radius: 999px;
-  margin-bottom: 22px;
-}
 .lp-hero-copy h1 {
   font-size: 52px;
   line-height: 1.05;

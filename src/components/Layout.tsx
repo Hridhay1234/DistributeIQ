@@ -33,7 +33,7 @@ function Brand() {
         <Icon name="store" size={22} strokeWidth={2.2} />
       </div>
       <div className="brand-text">
-        <span className="brand-name">DistributeIQ</span>
+        <span className="brand-name">RetailLens</span>
         <span className="brand-sub">Kirana OS</span>
       </div>
     </div>

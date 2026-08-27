@@ -18,7 +18,7 @@ type Step = {
 const STEPS: Step[] = [
   {
     icon: 'store',
-    title: 'Welcome to DistributeIQ! 👋',
+    title: 'Welcome to RetailLens! 👋',
     body: "Let's take a quick 20-second tour of your new store. You can skip anytime.",
   },
   {

@@ -205,7 +205,7 @@ export default function BillScan() {
 
               <div className="scan-tips card">
                 <h4>
-                  <Icon name="sparkle" size={18} /> Powered by Llama-4 Scout
+                  <Icon name="sparkle" size={18} /> Powered by Qwen3.6
                 </h4>
                 <ul>
                   <li>

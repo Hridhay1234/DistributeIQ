@@ -33,7 +33,7 @@ export default function Login() {
     }
   }, [user])
 
-  if (authLoading) return <Splash label="Starting DistributeIQ…" />
+  if (authLoading) return <Splash label="Starting RetailLens…" />
 
   // already signed in + set up → straight to the app
   if (configured && user && !loading && onboarded) {
@@ -68,7 +68,7 @@ export default function Login() {
           <div className="brand-mark lg">
             <Icon name="store" size={26} strokeWidth={2.2} />
           </div>
-          <span className="ab-name">DistributeIQ</span>
+          <span className="ab-name">RetailLens</span>
         </button>
 
         <div className="ab-mid">

@@ -101,7 +101,7 @@ export default function SaleReceipt({ sale, store, onClose }: Props) {
 
           <div className="rcpt-foot">
             <p>Thank you for shopping! 🙏</p>
-            <p className="rcpt-powered">Billed with DistributeIQ</p>
+            <p className="rcpt-powered">Billed with RetailLens</p>
           </div>
         </div>
 

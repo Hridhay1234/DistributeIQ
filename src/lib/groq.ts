@@ -1,7 +1,7 @@
 import { CATEGORIES } from '../data/mock'
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct'
+const MODEL = 'qwen/qwen3.6-27b'
 
 const groqKey = import.meta.env.VITE_GROQ_API_KEY as string | undefined
 export const isGroqConfigured = Boolean(groqKey)
@@ -147,7 +147,7 @@ async function groqVisionJSON(
   }
 }
 
-/** Send the bill image to Groq's Llama-4 Scout vision model and parse the result. */
+/** Send the bill image to Groq's Qwen3.6 vision model and parse the result. */
 export async function scanBill(dataUrl: string): Promise<ScanResult> {
   const parsed = await groqVisionJSON(PROMPT, dataUrl)
   const result = coerceResult(parsed)

@@ -58,8 +58,8 @@ const STEPS: { icon: IconName; title: string; body: string }[] = [
 ]
 
 const STATS = [
-  { value: '12,000+', label: 'Kirana shops' },
-  { value: '₹4.8 Cr', label: 'Sales logged' },
+  { value: '50+', label: 'Kirana shops' },
+  { value: '₹15', label: 'Sales logged' },
   { value: '30 sec', label: 'To log a day' },
   { value: '94%', label: 'Scan accuracy' },
 ]
@@ -80,7 +80,7 @@ export default function Landing() {
           <span className="lp-mark">
             <Icon name="store" size={20} strokeWidth={2.2} />
           </span>
-          DistributeIQ
+          RetailLens
         </div>
         <nav className="lp-links">
           <a href="#features">Features</a>
@@ -100,9 +100,6 @@ export default function Landing() {
       {/* Hero */}
       <section className="lp-hero">
         <div className="lp-hero-copy">
-          <span className="lp-pill">
-            <Icon name="sparkle" size={14} /> AI-powered Kirana OS
-          </span>
           <h1>
             The simplest way to run your <span>kirana shop.</span>
           </h1>
@@ -308,10 +305,10 @@ export default function Landing() {
           <span className="lp-mark">
             <Icon name="store" size={18} strokeWidth={2.2} />
           </span>
-          DistributeIQ
+          RetailLens
         </div>
         <span className="lp-foot-copy">
-          © 2026 DistributeIQ · Built for Indian kirana shops
+          © 2026 RetailLens · Built for Indian kirana shops
         </span>
       </footer>
     </div>
