@@ -15,7 +15,7 @@ import './billscan.css'
 type Stage = 'upload' | 'parsing' | 'review' | 'applied' | 'error'
 type Tab = 'scan' | 'history'
 
-type Line = ScannedItem & { id: string }
+type Line = ScannedItem & { id: string; price: number }
 
 const STEPS = [
   'Reading the image',
@@ -57,6 +57,16 @@ export default function BillScan() {
     return (name: string) => byName.get(name.toLowerCase())
   }, [products])
 
+  const priceOf = useMemo(() => {
+    const byName = new Map(products.map((p) => [p.name.toLowerCase(), p.price]))
+    return (name: string) => byName.get(name.toLowerCase())
+  }, [products])
+
+  /** Suggested selling price for a scanned line: the matched product's
+   * current price, else a default markup over cost — always editable. */
+  const suggestPrice = (name: string, cost: number) =>
+    priceOf(name) ?? Math.round(cost * 1.18)
+
   const total = lines.reduce((s, l) => s + l.qty * l.cost, 0)
   const totalUnits = lines.reduce((s, l) => s + l.qty, 0)
   const matchedCount = lines.filter((l) => matchOf(l.name)).length
@@ -71,7 +81,13 @@ export default function BillScan() {
       const result = await scanBill(dataUrl)
       setSupplier(result.supplier)
       setBillDate(result.date)
-      setLines(result.items.map((it) => ({ ...it, id: `l${lineSeq++}` })))
+      setLines(
+        result.items.map((it) => ({
+          ...it,
+          id: `l${lineSeq++}`,
+          price: suggestPrice(it.name, it.cost),
+        })),
+      )
       setStage('review')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Scan failed. Please try again.')
@@ -89,6 +105,10 @@ export default function BillScan() {
     setLines((ls) =>
       ls.map((l) => (l.id === id ? { ...l, cost: Math.max(0, cost) } : l)),
     )
+  const setPrice = (id: string, price: number) =>
+    setLines((ls) =>
+      ls.map((l) => (l.id === id ? { ...l, price: Math.max(0, price) } : l)),
+    )
   const remove = (id: string) => setLines((ls) => ls.filter((l) => l.id !== id))
 
   const apply = async () => {
@@ -103,6 +123,7 @@ export default function BillScan() {
             emoji: l.emoji,
             qty: l.qty,
             cost: l.cost,
+            price: l.price,
             category: l.category,
             productId: matchOf(l.name),
           })),
@@ -342,7 +363,7 @@ export default function BillScan() {
                           <div className="rr-costedit">
                             <Icon name="box" size={12} /> {l.category}
                             <span className="rr-dot">·</span>
-                            <span className="rr-costlabel">@ ₹</span>
+                            <span className="rr-costlabel">Cost ₹</span>
                             <input
                               className="rr-cost-input"
                               inputMode="numeric"
@@ -352,6 +373,18 @@ export default function BillScan() {
                                 setCost(l.id, Number(e.target.value) || 0)
                               }
                               aria-label="Unit cost"
+                            />
+                            <span className="rr-dot">·</span>
+                            <span className="rr-costlabel">Sell ₹</span>
+                            <input
+                              className="rr-cost-input"
+                              inputMode="numeric"
+                              value={l.price || ''}
+                              placeholder="0"
+                              onChange={(e) =>
+                                setPrice(l.id, Number(e.target.value) || 0)
+                              }
+                              aria-label="Selling price"
                             />
                           </div>
                         </div>

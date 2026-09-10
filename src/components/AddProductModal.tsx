@@ -17,8 +17,9 @@ export type ProductFormData = {
 }
 
 type Props = {
-  mode: 'catalog' | 'inventory'
+  mode: 'catalog' | 'inventory' | 'edit'
   title?: string
+  initial?: Partial<ProductFormData>
   onClose: () => void
   onSave: (data: ProductFormData) => Promise<void>
 }
@@ -26,19 +27,20 @@ type Props = {
 export default function AddProductModal({
   mode,
   title,
+  initial,
   onClose,
   onSave,
 }: Props) {
   const [form, setForm] = useState({
-    name: '',
-    brand: '',
-    emoji: '📦',
-    category: CATEGORIES[0] as string,
-    price: '',
-    cost: '',
-    stock: '',
-    lowStockAt: '',
-    unit: 'pc',
+    name: initial?.name ?? '',
+    brand: initial?.brand ?? '',
+    emoji: initial?.emoji ?? '📦',
+    category: initial?.category ?? (CATEGORIES[0] as string),
+    price: initial?.price != null ? String(initial.price) : '',
+    cost: initial?.cost != null ? String(initial.cost) : '',
+    stock: initial?.stock != null ? String(initial.stock) : '',
+    lowStockAt: initial?.lowStockAt != null ? String(initial.lowStockAt) : '',
+    unit: initial?.unit ?? 'pc',
   })
   const [saving, setSaving] = useState(false)
   const [scanning, setScanning] = useState(false)
@@ -103,14 +105,19 @@ export default function AddProductModal({
       <div className="modal fade-up" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h2 className="section-title">
-            {title ?? (mode === 'catalog' ? 'Add to catalogue' : 'Add a product')}
+            {title ??
+              (mode === 'catalog'
+                ? 'Add to catalogue'
+                : mode === 'edit'
+                  ? 'Edit product details'
+                  : 'Add a product')}
           </h2>
           <button className="icon-btn" onClick={onClose} aria-label="close">
             <Icon name="close" size={18} />
           </button>
         </div>
 
-        {isGroqConfigured && (
+        {isGroqConfigured && mode !== 'edit' && (
           <div className="scan-product">
             <input
               ref={cameraInput}
@@ -238,17 +245,19 @@ export default function AddProductModal({
             />
           </label>
 
-          {mode === 'inventory' && (
+          {(mode === 'inventory' || mode === 'edit') && (
             <>
-              <label className="mf">
-                <span>Opening stock</span>
-                <input
-                  inputMode="numeric"
-                  placeholder="24"
-                  value={form.stock}
-                  onChange={(e) => set('stock', e.target.value)}
-                />
-              </label>
+              {mode === 'inventory' && (
+                <label className="mf">
+                  <span>Opening stock</span>
+                  <input
+                    inputMode="numeric"
+                    placeholder="24"
+                    value={form.stock}
+                    onChange={(e) => set('stock', e.target.value)}
+                  />
+                </label>
+              )}
               <label className="mf">
                 <span>Reorder at</span>
                 <input
@@ -272,7 +281,13 @@ export default function AddProductModal({
             disabled={!valid || saving}
           >
             <Icon name="check" size={16} />
-            {saving ? 'Saving…' : mode === 'catalog' ? 'Add product' : 'Add'}
+            {saving
+              ? 'Saving…'
+              : mode === 'catalog'
+                ? 'Add product'
+                : mode === 'edit'
+                  ? 'Save changes'
+                  : 'Add'}
           </button>
         </div>
       </div>

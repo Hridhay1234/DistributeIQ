@@ -5,14 +5,30 @@ import LineChart from '../components/charts/LineChart'
 import DonutChart from '../components/charts/DonutChart'
 import { useData } from '../context/DataContext'
 import { computeAnalytics } from '../lib/analytics'
+import { computeDemand, type DemandLevel } from '../lib/demand'
 import { formatINR } from '../data/mock'
 import './dashboard.css'
+
+const DEMAND_CHIP: Record<DemandLevel, string> = {
+  high: 'chip-green',
+  medium: 'chip-orange',
+  low: 'chip-red',
+}
+const DEMAND_LABEL: Record<DemandLevel, string> = {
+  high: 'High demand',
+  medium: 'Medium demand',
+  low: 'Low demand',
+}
 
 export default function Reports() {
   const { products, sales, bills } = useData()
   const a = useMemo(
     () => computeAnalytics(products, sales, bills),
     [products, sales, bills],
+  )
+  const demand = useMemo(
+    () => computeDemand(products, sales),
+    [products, sales],
   )
 
   const kpis: {
@@ -196,6 +212,46 @@ export default function Reports() {
             </button>
           </div>
         </article>
+      </section>
+
+      <section className="card">
+        <div className="card-head">
+          <div>
+            <h2 className="section-title">Demand Insights</h2>
+            <p className="muted" style={{ marginTop: 4 }}>
+              Based on sales velocity — last 14 days vs. the 14 days before
+            </p>
+          </div>
+        </div>
+        {demand.length ? (
+          <ul className="top-list">
+            {demand.slice(0, 10).map((d) => (
+              <li key={d.productId}>
+                <span className="emoji-box">{d.emoji}</span>
+                <div className="tp-meta">
+                  <span className="tp-name">{d.name}</span>
+                  <span className="tp-sold">
+                    {d.unitsPerDay}/day · {d.category}
+                    {d.daysOfStock !== null &&
+                      ` · ${d.daysOfStock}d of stock left`}
+                  </span>
+                </div>
+                <span className={'chip ' + DEMAND_CHIP[d.level]}>
+                  <Icon
+                    name={d.trendPct >= 0 ? 'trend-up' : 'trend-down'}
+                    size={12}
+                  />
+                  {DEMAND_LABEL[d.level]}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="empty-block">
+            <Icon name="reports" size={24} />
+            <p>No sales recorded yet — demand shows up once items start selling.</p>
+          </div>
+        )}
       </section>
     </>
   )

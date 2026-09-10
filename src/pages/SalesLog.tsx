@@ -4,23 +4,11 @@ import Topbar from '../components/Topbar'
 import Icon from '../components/Icon'
 import AddProductModal from '../components/AddProductModal'
 import { useData } from '../context/DataContext'
-import { resolveDiscount, slugify } from '../lib/db'
+import { resolveDiscount } from '../lib/db'
+import { mergeCatalogAndProducts, type PickItem } from '../lib/items'
 import { CATEGORIES, formatINR } from '../data/mock'
 import type { DiscountType, ItemDiscount, SaleItem } from '../lib/types'
 import './saleslog.css'
-
-type PickItem = {
-  key: string // sale.productId — store id if stocked, else catalog id
-  discKey: string // slug(name) — stable key for saved discounts
-  name: string
-  brand: string
-  emoji: string
-  category: string
-  price: number
-  cost: number
-  unit: string
-  stock?: number
-}
 
 type CatFilter = 'All' | (typeof CATEGORIES)[number]
 
@@ -48,37 +36,10 @@ export default function SalesLog() {
     return store?.itemDiscounts?.[dk] ?? null
   }
 
-  const items = useMemo<PickItem[]>(() => {
-    const byName = new Map<string, PickItem>()
-    for (const c of catalog) {
-      byName.set(c.name.toLowerCase(), {
-        key: c.id,
-        discKey: slugify(c.name),
-        name: c.name,
-        brand: c.brand,
-        emoji: c.emoji,
-        category: c.category,
-        price: c.price,
-        cost: c.cost,
-        unit: c.unit,
-      })
-    }
-    for (const p of products) {
-      byName.set(p.name.toLowerCase(), {
-        key: p.id,
-        discKey: slugify(p.name),
-        name: p.name,
-        brand: p.brand,
-        emoji: p.emoji,
-        category: p.category,
-        price: p.price,
-        cost: p.cost,
-        unit: p.unit,
-        stock: p.stock,
-      })
-    }
-    return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name))
-  }, [catalog, products])
+  const items = useMemo(
+    () => mergeCatalogAndProducts(catalog, products),
+    [catalog, products],
+  )
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()

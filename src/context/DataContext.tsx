@@ -49,12 +49,20 @@ type DataValue = {
   updatePreferences: (prefs: Preferences) => Promise<void>
   setItemDiscount: (key: string, disc: ItemDiscount | null) => Promise<void>
   addProduct: (product: Omit<Product, 'id'>) => Promise<string>
+  updateProduct: (
+    id: string,
+    patch: Partial<Omit<Product, 'id' | 'stock'>>,
+  ) => Promise<void>
   addCatalogItem: (item: Omit<CatalogItem, 'id'>) => Promise<string>
   setProductStock: (id: string, stock: number) => Promise<void>
   addSale: (input: SaleInput) => Promise<void>
   applyBill: (
     supplier: string,
-    lines: (BillLine & { productId?: string; category?: string })[],
+    lines: (BillLine & {
+      price: number
+      productId?: string
+      category?: string
+    })[],
   ) => Promise<void>
   saveSnapshot: () => Promise<void>
 }
@@ -132,6 +140,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updatePreferences: (prefs) => dbApi.updatePreferences(uid!, prefs),
       setItemDiscount: (key, disc) => dbApi.setItemDiscount(uid!, key, disc),
       addProduct: (product) => dbApi.addProduct(uid!, product),
+      updateProduct: (id, patch) => dbApi.updateProduct(uid!, id, patch),
       addCatalogItem: (item) => dbApi.addCatalogItem(item),
       setProductStock: (id, stock) => dbApi.setProductStock(uid!, id, stock),
       addSale: (input) => dbApi.addSale(uid!, input),

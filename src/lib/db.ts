@@ -111,6 +111,17 @@ export async function addProduct(
   return ref.id
 }
 
+/** Edit a product's own details — name, brand, category, unit, price, cost,
+ * reorder threshold. Stock is intentionally excluded; it's changed via
+ * `setProductStock` (the shelf-count stepper). */
+export async function updateProduct(
+  uid: string,
+  productId: string,
+  patch: Partial<Omit<Product, 'id' | 'stock'>>,
+): Promise<void> {
+  await updateDoc(doc(productsCol(uid), productId), patch)
+}
+
 /* ---------------- sales ---------------- */
 export function subscribeSales(
   uid: string,
@@ -211,7 +222,7 @@ export function subscribeBills(
 export async function applyBill(
   uid: string,
   supplier: string,
-  lines: (BillLine & { productId?: string; category?: string })[],
+  lines: (BillLine & { price: number; productId?: string; category?: string })[],
 ): Promise<void> {
   const totalUnits = lines.reduce((s, l) => s + l.qty, 0)
   const total = lines.reduce((s, l) => s + l.qty * l.cost, 0)
@@ -239,16 +250,21 @@ export async function applyBill(
   for (const l of lines) {
     if (l.productId && stockMap.has(l.productId)) {
       const next = (stockMap.get(l.productId) ?? 0) + l.qty
-      batch.update(doc(productsCol(uid), l.productId), { stock: next })
+      batch.update(doc(productsCol(uid), l.productId), {
+        stock: next,
+        cost: l.cost,
+        price: l.price,
+      })
     } else {
-      // unmatched line → create a new product with sensible defaults
+      // unmatched line → create a new product, using the selling price the
+      // shopkeeper entered during review
       const ref = doc(productsCol(uid))
       batch.set(ref, {
         name: l.name,
         brand: '—',
         emoji: l.emoji || '📦',
         category: l.category || 'Staples',
-        price: Math.round(l.cost * 1.18),
+        price: l.price,
         cost: l.cost,
         stock: l.qty,
         lowStockAt: Math.max(5, Math.round(l.qty * 0.3)),

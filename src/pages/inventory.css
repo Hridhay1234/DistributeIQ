@@ -129,7 +129,40 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   margin-bottom: 12px;
+}
+.inv-card.unstocked {
+  border-color: var(--line);
+  background: linear-gradient(180deg, #fafafa, #fff);
+}
+.inv-edit-btn {
+  margin-left: auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background: var(--bg-2, #f4f4f4);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.inv-edit-btn:hover {
+  color: var(--green-800);
+  background: var(--green-100);
+}
+.inv-price-row {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.inv-price strong {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 700;
+  margin-left: 3px;
 }
 .inv-name {
   font-weight: 700;

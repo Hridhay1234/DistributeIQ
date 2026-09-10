@@ -1,47 +1,86 @@
 import { useMemo, useRef, useState } from 'react'
 import Topbar from '../components/Topbar'
 import Icon from '../components/Icon'
-import AddProductModal from '../components/AddProductModal'
+import AddProductModal, {
+  type ProductFormData,
+} from '../components/AddProductModal'
 import { useData } from '../context/DataContext'
+import { mergeCatalogAndProducts, type PickItem } from '../lib/items'
 import { CATEGORIES, formatINR } from '../data/mock'
-import type { Product } from '../lib/types'
 import './inventory.css'
 
 type Filter = 'All' | 'Low stock' | (typeof CATEGORIES)[number]
 
+const DEFAULT_LOW_STOCK_AT = 5
+
 export default function Inventory() {
-  const { products, setProductStock, saveSnapshot, addProduct } = useData()
+  const {
+    catalog,
+    products,
+    setProductStock,
+    saveSnapshot,
+    addProduct,
+    updateProduct,
+  } = useData()
   const [filter, setFilter] = useState<Filter>('All')
   const [draft, setDraft] = useState<Record<string, number>>({})
   const [snapSaved, setSnapSaved] = useState(false)
   const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState<PickItem | null>(null)
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
-  const stockOf = (p: Product) => draft[p.id] ?? p.stock
+  const items = useMemo(
+    () => mergeCatalogAndProducts(catalog, products),
+    [catalog, products],
+  )
 
-  const setStock = (p: Product, next: number) => {
+  const stockOf = (p: PickItem) => draft[p.key] ?? p.stock ?? 0
+  const lowAt = (p: PickItem) => p.lowStockAt ?? DEFAULT_LOW_STOCK_AT
+
+  const setStock = (p: PickItem, next: number) => {
     const v = Math.max(0, next)
-    setDraft((d) => ({ ...d, [p.id]: v }))
-    clearTimeout(timers.current[p.id])
-    timers.current[p.id] = setTimeout(() => {
-      setProductStock(p.id, v).catch(() => {})
+    if (p.stock === undefined) {
+      // not on the shelf yet — add it as a real product, starting at this count
+      addProduct({
+        name: p.name,
+        brand: p.brand,
+        emoji: p.emoji,
+        category: p.category,
+        price: p.price,
+        cost: p.cost,
+        unit: p.unit,
+        stock: v,
+        lowStockAt: DEFAULT_LOW_STOCK_AT,
+      }).catch(() => {})
+      return
+    }
+    setDraft((d) => ({ ...d, [p.key]: v }))
+    clearTimeout(timers.current[p.key])
+    timers.current[p.key] = setTimeout(() => {
+      setProductStock(p.key, v).catch(() => {})
     }, 450)
   }
 
-  const lowCount = products.filter((p) => stockOf(p) <= p.lowStockAt).length
-  const stockValue = products.reduce((s, p) => s + stockOf(p) * p.cost, 0)
+  const productStockOf = (id: string, fallback: number) => draft[id] ?? fallback
+  const lowCount = products.filter(
+    (p) => productStockOf(p.id, p.stock) <= p.lowStockAt,
+  ).length
+  const stockValue = products.reduce(
+    (s, p) => s + productStockOf(p.id, p.stock) * p.cost,
+    0,
+  )
 
   const filtered = useMemo(() => {
-    return products.filter((p) => {
+    return items.filter((p) => {
       if (filter === 'All') return true
-      if (filter === 'Low stock') return stockOf(p) <= p.lowStockAt
+      if (filter === 'Low stock') return stockOf(p) <= lowAt(p)
       return p.category === filter
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, products, draft])
+  }, [filter, items, draft])
 
   const grouped = useMemo(() => {
-    const map = new Map<string, Product[]>()
+    const map = new Map<string, PickItem[]>()
     filtered.forEach((p) => {
       const arr = map.get(p.category) || []
       arr.push(p)
@@ -50,11 +89,31 @@ export default function Inventory() {
     return [...map.entries()]
   }, [filtered])
 
-  const stateOf = (p: Product): 'ok' | 'low' | 'out' => {
+  const stateOf = (p: PickItem): 'ok' | 'low' | 'out' => {
     const s = stockOf(p)
     if (s === 0) return 'out'
-    if (s <= p.lowStockAt) return 'low'
+    if (s <= lowAt(p)) return 'low'
     return 'ok'
+  }
+
+  const saveEdit = async (data: ProductFormData) => {
+    if (!editing) return
+    const patch = {
+      name: data.name,
+      brand: data.brand,
+      emoji: data.emoji,
+      category: data.category,
+      price: data.price,
+      cost: data.cost,
+      unit: data.unit,
+      lowStockAt: data.lowStockAt,
+    }
+    if (editing.stock === undefined) {
+      await addProduct({ ...patch, stock: 0 })
+    } else {
+      await updateProduct(editing.key, patch)
+    }
+    setEditing(null)
   }
 
   const doSnapshot = async () => {
@@ -156,41 +215,83 @@ export default function Inventory() {
         />
       )}
 
-      {products.length === 0 ? (
+      {editing && (
+        <AddProductModal
+          mode="edit"
+          initial={{
+            name: editing.name,
+            brand: editing.brand,
+            emoji: editing.emoji,
+            category: editing.category,
+            price: editing.price,
+            cost: editing.cost,
+            unit: editing.unit,
+            lowStockAt: lowAt(editing),
+          }}
+          onClose={() => setEditing(null)}
+          onSave={saveEdit}
+        />
+      )}
+
+      {items.length === 0 ? (
         <div className="empty-block">
           <Icon name="box" size={26} />
           <p>No products yet. Add them via onboarding or a bill scan.</p>
         </div>
       ) : (
         <div className="inv-groups">
-          {grouped.map(([cat, items]) => (
+          {grouped.map(([cat, catItems]) => (
             <section key={cat} className="inv-group">
               <div className="inv-group-head">
                 <h3>{cat}</h3>
-                <span className="muted">{items.length} items</span>
+                <span className="muted">{catItems.length} items</span>
               </div>
               <div className="inv-cards">
-                {items.map((p) => {
+                {catItems.map((p) => {
                   const st = stateOf(p)
                   const stock = stockOf(p)
+                  const notOnShelf = p.stock === undefined
                   return (
-                    <article key={p.id} className={'inv-card ' + st}>
+                    <article
+                      key={p.key}
+                      className={'inv-card ' + st + (notOnShelf ? ' unstocked' : '')}
+                    >
                       <div className="inv-card-top">
                         <span className="emoji-box">{p.emoji}</span>
-                        {st !== 'ok' && (
-                          <span
-                            className={
-                              'chip ' +
-                              (st === 'out' ? 'chip-red' : 'chip-orange')
-                            }
-                          >
-                            <Icon name="alert" size={12} />
-                            {st === 'out' ? 'Out' : 'Low'}
-                          </span>
+                        {notOnShelf ? (
+                          <span className="chip">Not on shelf</span>
+                        ) : (
+                          st !== 'ok' && (
+                            <span
+                              className={
+                                'chip ' +
+                                (st === 'out' ? 'chip-red' : 'chip-orange')
+                              }
+                            >
+                              <Icon name="alert" size={12} />
+                              {st === 'out' ? 'Out' : 'Low'}
+                            </span>
+                          )
                         )}
+                        <button
+                          className="inv-edit-btn"
+                          onClick={() => setEditing(p)}
+                          aria-label="Edit product details"
+                        >
+                          <Icon name="edit" size={14} />
+                        </button>
                       </div>
                       <div className="inv-name">{p.name}</div>
                       <div className="inv-brand muted">{p.brand}</div>
+
+                      <div className="inv-price-row">
+                        <span className="inv-price sell">
+                          Sell <strong>{formatINR(p.price)}</strong>
+                        </span>
+                        <span className="inv-price cost">
+                          Cost <strong>{formatINR(p.cost)}</strong>
+                        </span>
+                      </div>
 
                       <div className="inv-count-row">
                         <button
@@ -216,12 +317,12 @@ export default function Inventory() {
                         <div
                           className="inv-bar-fill"
                           style={{
-                            width: `${Math.min(100, (stock / (p.lowStockAt * 2.5)) * 100)}%`,
+                            width: `${Math.min(100, (stock / (lowAt(p) * 2.5)) * 100)}%`,
                           }}
                         />
                       </div>
                       <div className="inv-reorder muted">
-                        Reorder at {p.lowStockAt}
+                        Reorder at {lowAt(p)}
                       </div>
                     </article>
                   )
