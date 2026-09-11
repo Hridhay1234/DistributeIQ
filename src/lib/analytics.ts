@@ -60,11 +60,68 @@ function pctDelta(curr: number, prev: number): { delta: number; up: boolean } {
 
 export type CategorySlice = { label: string; value: number; color: string }
 
+/**
+ * Revenue split by category. `days = null` means all-time; otherwise a
+ * trailing window (e.g. 7 = this week, 30 = this month). Falls back to
+ * current stock value when nothing sold in the window, so the chart is
+ * never empty for a brand-new store.
+ */
+export function categorySplitFor(
+  products: Product[],
+  sales: Sale[],
+  days: number | null,
+): { split: CategorySlice[]; total: number } {
+  const since = days == null ? -Infinity : startOfDay(Date.now()) - (days - 1) * DAY
+  const catMap = new Map<string, number>()
+  for (const s of sales) {
+    if (s.date < since) continue
+    for (const it of s.items) {
+      catMap.set(it.category, (catMap.get(it.category) ?? 0) + it.qty * it.price)
+    }
+  }
+  if (catMap.size === 0) {
+    for (const p of products) {
+      catMap.set(p.category, (catMap.get(p.category) ?? 0) + p.stock * p.price)
+    }
+  }
+  const split: CategorySlice[] = [...catMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, value], i) => ({
+      label,
+      value: Math.round(value),
+      color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+    }))
+  return { split, total: split.reduce((s, c) => s + c.value, 0) }
+}
+
 export type TopProduct = {
   name: string
   emoji: string
   sold: number
   revenue: number
+}
+
+/** Best-selling products across all recorded sales, ranked by revenue or
+ * units sold. */
+export function topProductsBy(
+  sales: Sale[],
+  by: 'revenue' | 'units' = 'revenue',
+  limit = 4,
+): TopProduct[] {
+  const topMap = new Map<string, TopProduct>()
+  for (const s of sales) {
+    for (const it of s.items) {
+      const cur =
+        topMap.get(it.name) ??
+        ({ name: it.name, emoji: it.emoji, sold: 0, revenue: 0 } as TopProduct)
+      cur.sold += it.qty
+      cur.revenue += it.qty * it.price
+      topMap.set(it.name, cur)
+    }
+  }
+  return [...topMap.values()]
+    .sort((a, b) => (by === 'units' ? b.sold - a.sold : b.revenue - a.revenue))
+    .slice(0, limit)
 }
 
 export type RecentOrder = {
@@ -110,6 +167,33 @@ function fmtDate(ts: number) {
   })
 }
 
+/** Latest sales formatted as an orders table, optionally limited to a
+ * trailing date range ('today' | 'week' | 'all'). */
+export function recentOrdersFor(
+  sales: Sale[],
+  range: 'today' | 'week' | 'all' = 'all',
+  limit = 6,
+): RecentOrder[] {
+  const todayStart = startOfDay(Date.now())
+  const since =
+    range === 'today' ? todayStart : range === 'week' ? todayStart - 6 * DAY : -Infinity
+  return sales
+    .filter((s) => s.date >= since)
+    .slice(0, limit)
+    .map((s) => ({
+      id: s.id,
+      product:
+        s.items.length > 1
+          ? `${s.items[0].name.split(' ').slice(0, 2).join(' ')} +${s.items.length - 1}`
+          : (s.items[0]?.name ?? 'Sale'),
+      emoji: s.items[0]?.emoji ?? '🛒',
+      date: fmtDate(s.date),
+      status: 'Received',
+      amount: s.totalValue,
+      customer: s.customer ?? 'Walk-in',
+    }))
+}
+
 export function computeAnalytics(
   products: Product[],
   sales: Sale[],
@@ -131,30 +215,11 @@ export function computeAnalytics(
     : 0
 
   // category revenue (last 30 days), falling back to stock value
-  const monthAgo = todayStart - 29 * DAY
-  const catMap = new Map<string, number>()
-  for (const s of sales) {
-    if (s.date < monthAgo) continue
-    for (const it of s.items) {
-      catMap.set(
-        it.category,
-        (catMap.get(it.category) ?? 0) + it.qty * it.price,
-      )
-    }
-  }
-  if (catMap.size === 0) {
-    for (const p of products) {
-      catMap.set(p.category, (catMap.get(p.category) ?? 0) + p.stock * p.price)
-    }
-  }
-  const categorySplit: CategorySlice[] = [...catMap.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([label, value], i) => ({
-      label,
-      value: Math.round(value),
-      color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
-    }))
-  const categoryTotal = categorySplit.reduce((s, c) => s + c.value, 0)
+  const { split: categorySplit, total: categoryTotal } = categorySplitFor(
+    products,
+    sales,
+    30,
+  )
 
   // ---- profit / loss (from buying vs selling prices) ----
   const priceCost = new Map(products.map((p) => [p.id, p.cost]))
@@ -182,34 +247,10 @@ export function computeAnalytics(
   const marginPct = revenueAll > 0 ? (profitAll / revenueAll) * 100 : 0
 
   // top products (all time)
-  const topMap = new Map<string, TopProduct>()
-  for (const s of sales) {
-    for (const it of s.items) {
-      const cur =
-        topMap.get(it.name) ??
-        ({ name: it.name, emoji: it.emoji, sold: 0, revenue: 0 } as TopProduct)
-      cur.sold += it.qty
-      cur.revenue += it.qty * it.price
-      topMap.set(it.name, cur)
-    }
-  }
-  const topProducts = [...topMap.values()]
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 4)
+  const topProducts = topProductsBy(sales, 'revenue', 4)
 
   // recent orders from latest sales (sales already sorted desc by date)
-  const recentOrders: RecentOrder[] = sales.slice(0, 6).map((s) => ({
-    id: s.id,
-    product:
-      s.items.length > 1
-        ? `${s.items[0].name.split(' ').slice(0, 2).join(' ')} +${s.items.length - 1}`
-        : (s.items[0]?.name ?? 'Sale'),
-    emoji: s.items[0]?.emoji ?? '🛒',
-    date: fmtDate(s.date),
-    status: 'Received',
-    amount: s.totalValue,
-    customer: s.customer ?? 'Walk-in',
-  }))
+  const recentOrders = recentOrdersFor(sales, 'all', 6)
 
   const lowStock = products.filter((p) => p.stock <= p.lowStockAt)
 

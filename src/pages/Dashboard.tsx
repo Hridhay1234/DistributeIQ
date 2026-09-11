@@ -5,16 +5,57 @@ import Sparkline from '../components/Sparkline'
 import LineChart from '../components/charts/LineChart'
 import DonutChart from '../components/charts/DonutChart'
 import Tour from '../components/Tour'
+import Dropdown from '../components/Dropdown'
 import { useData } from '../context/DataContext'
-import { computeAnalytics } from '../lib/analytics'
+import {
+  computeAnalytics,
+  categorySplitFor,
+  dailyRevenue,
+  recentOrdersFor,
+  topProductsBy,
+} from '../lib/analytics'
 import { formatINR } from '../data/mock'
 import './dashboard.css'
+
+type TrendRange = '7d' | '30d'
+type CatRange = 'week' | 'month' | 'all'
+type TopSort = 'revenue' | 'units'
+type OrdersRange = 'today' | 'week' | 'all'
 
 export default function Dashboard() {
   const { products, sales, bills, store, updateStore } = useData()
   const a = useMemo(
     () => computeAnalytics(products, sales, bills),
     [products, sales, bills],
+  )
+
+  const [trendRange, setTrendRange] = useState<TrendRange>('7d')
+  const trend = useMemo(
+    () => dailyRevenue(sales, trendRange === '7d' ? 7 : 30),
+    [sales, trendRange],
+  )
+
+  const [catRange, setCatRange] = useState<CatRange>('month')
+  const { split: categorySplit, total: categoryTotal } = useMemo(
+    () =>
+      categorySplitFor(
+        products,
+        sales,
+        catRange === 'week' ? 7 : catRange === 'month' ? 30 : null,
+      ),
+    [products, sales, catRange],
+  )
+
+  const [topSort, setTopSort] = useState<TopSort>('revenue')
+  const topProducts = useMemo(
+    () => topProductsBy(sales, topSort, 4),
+    [sales, topSort],
+  )
+
+  const [ordersRange, setOrdersRange] = useState<OrdersRange>('all')
+  const recentOrders = useMemo(
+    () => recentOrdersFor(sales, ordersRange, 6),
+    [sales, ordersRange],
   )
 
   const [tourDismissed, setTourDismissed] = useState(false)
@@ -137,29 +178,44 @@ export default function Dashboard() {
                 </span>
               </div>
             </div>
-            <button className="pill-select">
-              Weekly <Icon name="chevron-down" size={15} />
-            </button>
+            <Dropdown
+              value={trendRange}
+              onChange={setTrendRange}
+              options={[
+                { value: '7d', label: 'Weekly' },
+                { value: '30d', label: 'Monthly' },
+              ]}
+            />
           </div>
-          <LineChart data={a.trend} height={250} highlightIndex={5} />
+          <LineChart
+            data={trend}
+            height={250}
+            highlightIndex={trendRange === '7d' ? 5 : undefined}
+          />
         </article>
 
         <article className="card chart-card">
           <div className="card-head">
             <h2 className="section-title">Sales by Category</h2>
-            <button className="pill-select">
-              Monthly <Icon name="chevron-down" size={15} />
-            </button>
+            <Dropdown
+              value={catRange}
+              onChange={setCatRange}
+              options={[
+                { value: 'week', label: 'Weekly' },
+                { value: 'month', label: 'Monthly' },
+                { value: 'all', label: 'All time' },
+              ]}
+            />
           </div>
-          {a.categoryTotal > 0 ? (
+          {categoryTotal > 0 ? (
             <div className="donut-wrap">
               <DonutChart
-                data={a.categorySplit}
-                centerTop={(a.categoryTotal / 1000).toFixed(1) + 'k'}
+                data={categorySplit}
+                centerTop={(categoryTotal / 1000).toFixed(1) + 'k'}
                 centerSub="total"
               />
               <ul className="legend">
-                {a.categorySplit.map((c) => (
+                {categorySplit.map((c) => (
                   <li key={c.label}>
                     <span className="dot" style={{ background: c.color }} />
                     <span className="lg-label">{c.label}</span>
@@ -178,13 +234,18 @@ export default function Dashboard() {
         <article className="card">
           <div className="card-head">
             <h2 className="section-title">Top Products</h2>
-            <button className="pill-select">
-              Revenue <Icon name="chevron-down" size={15} />
-            </button>
+            <Dropdown
+              value={topSort}
+              onChange={setTopSort}
+              options={[
+                { value: 'revenue', label: 'Revenue' },
+                { value: 'units', label: 'Units' },
+              ]}
+            />
           </div>
-          {a.topProducts.length ? (
+          {topProducts.length ? (
             <ul className="top-list">
-              {a.topProducts.map((p, i) => (
+              {topProducts.map((p, i) => (
                 <li key={p.name}>
                   <span className="rank">{i + 1}</span>
                   <span className="emoji-box">{p.emoji}</span>
@@ -204,11 +265,18 @@ export default function Dashboard() {
         <article className="card">
           <div className="card-head">
             <h2 className="section-title">Recent Orders</h2>
-            <button className="pill-select">
-              <Icon name="filter" size={15} /> Filter
-            </button>
+            <Dropdown
+              value={ordersRange}
+              onChange={setOrdersRange}
+              filterIcon
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'today', label: 'Today' },
+                { value: 'week', label: 'This week' },
+              ]}
+            />
           </div>
-          {a.recentOrders.length ? (
+          {recentOrders.length ? (
             <div className="table-scroll">
               <table className="data-table">
                 <thead>
@@ -222,7 +290,7 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {a.recentOrders.map((o, i) => (
+                  {recentOrders.map((o, i) => (
                     <tr key={o.id}>
                       <td className="muted">{i + 1}</td>
                       <td>

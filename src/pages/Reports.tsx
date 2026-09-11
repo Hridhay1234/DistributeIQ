@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Topbar from '../components/Topbar'
 import Icon, { type IconName } from '../components/Icon'
 import LineChart from '../components/charts/LineChart'
 import DonutChart from '../components/charts/DonutChart'
+import Dropdown from '../components/Dropdown'
 import { useData } from '../context/DataContext'
-import { computeAnalytics } from '../lib/analytics'
+import { computeAnalytics, dailyRevenue, topProductsBy } from '../lib/analytics'
 import { computeDemand, type DemandLevel } from '../lib/demand'
 import { formatINR } from '../data/mock'
 import './dashboard.css'
@@ -29,6 +30,18 @@ export default function Reports() {
   const demand = useMemo(
     () => computeDemand(products, sales),
     [products, sales],
+  )
+
+  const [trendRange, setTrendRange] = useState<'week' | 'month'>('week')
+  const trend = useMemo(
+    () => dailyRevenue(sales, trendRange === 'week' ? 7 : 30),
+    [sales, trendRange],
+  )
+
+  const [bestSort, setBestSort] = useState<'revenue' | 'units'>('revenue')
+  const topProducts = useMemo(
+    () => topProductsBy(sales, bestSort, 4),
+    [sales, bestSort],
   )
 
   const kpis: {
@@ -117,11 +130,20 @@ export default function Reports() {
                 </span>
               </div>
             </div>
-            <button className="pill-select">
-              This week <Icon name="chevron-down" size={15} />
-            </button>
+            <Dropdown
+              value={trendRange}
+              onChange={setTrendRange}
+              options={[
+                { value: 'week', label: 'This week' },
+                { value: 'month', label: 'This month' },
+              ]}
+            />
           </div>
-          <LineChart data={a.trend} height={250} highlightIndex={5} />
+          <LineChart
+            data={trend}
+            height={250}
+            highlightIndex={trendRange === 'week' ? 5 : undefined}
+          />
         </article>
 
         <article className="card chart-card">
@@ -160,13 +182,18 @@ export default function Reports() {
         <article className="card">
           <div className="card-head">
             <h2 className="section-title">Best Sellers</h2>
-            <button className="pill-select">
-              Revenue <Icon name="chevron-down" size={15} />
-            </button>
+            <Dropdown
+              value={bestSort}
+              onChange={setBestSort}
+              options={[
+                { value: 'revenue', label: 'Revenue' },
+                { value: 'units', label: 'Units' },
+              ]}
+            />
           </div>
-          {a.topProducts.length ? (
+          {topProducts.length ? (
             <ul className="top-list">
-              {a.topProducts.map((p, i) => (
+              {topProducts.map((p, i) => (
                 <li key={p.name}>
                   <span className="rank">{i + 1}</span>
                   <span className="emoji-box">{p.emoji}</span>

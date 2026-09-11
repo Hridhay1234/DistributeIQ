@@ -59,7 +59,7 @@ const STEPS: { icon: IconName; title: string; body: string }[] = [
 
 const STATS = [
   { value: '50+', label: 'Kirana shops' },
-  { value: '₹15', label: 'Sales logged' },
+  { value: '₹1.5L', label: 'Sales logged' },
   { value: '30 sec', label: 'To log a day' },
   { value: '94%', label: 'Scan accuracy' },
 ]

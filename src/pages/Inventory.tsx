@@ -23,6 +23,7 @@ export default function Inventory() {
     updateProduct,
   } = useData()
   const [filter, setFilter] = useState<Filter>('All')
+  const [query, setQuery] = useState('')
   const [draft, setDraft] = useState<Record<string, number>>({})
   const [snapSaved, setSnapSaved] = useState(false)
   const [adding, setAdding] = useState(false)
@@ -71,13 +72,16 @@ export default function Inventory() {
   )
 
   const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
     return items.filter((p) => {
+      if (q && !p.name.toLowerCase().includes(q) && !p.brand.toLowerCase().includes(q))
+        return false
       if (filter === 'All') return true
       if (filter === 'Low stock') return stockOf(p) <= lowAt(p)
       return p.category === filter
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, items, draft])
+  }, [filter, query, items, draft])
 
   const grouped = useMemo(() => {
     const map = new Map<string, PickItem[]>()
@@ -131,6 +135,24 @@ export default function Inventory() {
         subtitle="Walk the aisle, update counts, flag what's running low"
         search={false}
       />
+
+      <div className="inv-searchbar">
+        <Icon name="search" size={18} />
+        <input
+          placeholder="Search products by name or brand…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {query && (
+          <button
+            className="inv-search-clear"
+            onClick={() => setQuery('')}
+            aria-label="Clear search"
+          >
+            <Icon name="close" size={16} />
+          </button>
+        )}
+      </div>
 
       <section className="inv-stats">
         <div className="inv-stat card">
@@ -238,6 +260,11 @@ export default function Inventory() {
           <Icon name="box" size={26} />
           <p>No products yet. Add them via onboarding or a bill scan.</p>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="empty-block">
+          <Icon name="search" size={26} />
+          <p>No products match “{query}”.</p>
+        </div>
       ) : (
         <div className="inv-groups">
           {grouped.map(([cat, catItems]) => (
@@ -246,45 +273,43 @@ export default function Inventory() {
                 <h3>{cat}</h3>
                 <span className="muted">{catItems.length} items</span>
               </div>
-              <div className="inv-cards">
+              <div className="inv-list">
                 {catItems.map((p) => {
                   const st = stateOf(p)
                   const stock = stockOf(p)
                   const notOnShelf = p.stock === undefined
                   return (
-                    <article
+                    <div
                       key={p.key}
-                      className={'inv-card ' + st + (notOnShelf ? ' unstocked' : '')}
+                      className={'inv-row ' + st + (notOnShelf ? ' unstocked' : '')}
                     >
-                      <div className="inv-card-top">
-                        <span className="emoji-box">{p.emoji}</span>
-                        {notOnShelf ? (
-                          <span className="chip">Not on shelf</span>
-                        ) : (
-                          st !== 'ok' && (
-                            <span
-                              className={
-                                'chip ' +
-                                (st === 'out' ? 'chip-red' : 'chip-orange')
-                              }
-                            >
-                              <Icon name="alert" size={12} />
-                              {st === 'out' ? 'Out' : 'Low'}
-                            </span>
-                          )
-                        )}
-                        <button
-                          className="inv-edit-btn"
-                          onClick={() => setEditing(p)}
-                          aria-label="Edit product details"
-                        >
-                          <Icon name="edit" size={14} />
-                        </button>
-                      </div>
-                      <div className="inv-name">{p.name}</div>
-                      <div className="inv-brand muted">{p.brand}</div>
+                      <span className="emoji-box">{p.emoji}</span>
 
-                      <div className="inv-price-row">
+                      <div className="inv-row-meta">
+                        <div className="inv-row-name-line">
+                          <span className="inv-name">{p.name}</span>
+                          {notOnShelf ? (
+                            <span className="chip">Not on shelf</span>
+                          ) : (
+                            st !== 'ok' && (
+                              <span
+                                className={
+                                  'chip ' +
+                                  (st === 'out' ? 'chip-red' : 'chip-orange')
+                                }
+                              >
+                                <Icon name="alert" size={12} />
+                                {st === 'out' ? 'Out' : 'Low'}
+                              </span>
+                            )
+                          )}
+                        </div>
+                        <span className="inv-brand muted">
+                          {p.brand} · Reorder at {lowAt(p)}
+                        </span>
+                      </div>
+
+                      <div className="inv-row-price">
                         <span className="inv-price sell">
                           Sell <strong>{formatINR(p.price)}</strong>
                         </span>
@@ -313,18 +338,14 @@ export default function Inventory() {
                         </button>
                       </div>
 
-                      <div className="inv-bar">
-                        <div
-                          className="inv-bar-fill"
-                          style={{
-                            width: `${Math.min(100, (stock / (lowAt(p) * 2.5)) * 100)}%`,
-                          }}
-                        />
-                      </div>
-                      <div className="inv-reorder muted">
-                        Reorder at {lowAt(p)}
-                      </div>
-                    </article>
+                      <button
+                        className="inv-edit-btn"
+                        onClick={() => setEditing(p)}
+                        aria-label="Edit product details"
+                      >
+                        <Icon name="edit" size={14} />
+                      </button>
+                    </div>
                   )
                 })}
               </div>
