@@ -9,6 +9,7 @@ const mainNav: { to: string; label: string; icon: IconName }[] = [
   { to: '/app/records', label: 'Sales Records', icon: 'receipt' },
   { to: '/app/inventory', label: 'Shelf Count', icon: 'inventory' },
   { to: '/app/scan', label: 'Bill Scan', icon: 'scan' },
+  { to: '/app/trends', label: 'Trending', icon: 'trend-up' },
   { to: '/app/reports', label: 'Reports', icon: 'reports' },
 ]
 

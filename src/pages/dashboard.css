@@ -336,6 +336,122 @@
   color: var(--green-600);
 }
 
+/* ---------- Trending brief ---------- */
+.trend-brief {
+  margin-bottom: 22px;
+}
+.trend-brief .card-head {
+  margin-bottom: 14px;
+}
+.tb-sub {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.tb-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--green-100);
+  color: var(--green-800);
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tb-all:hover {
+  background: var(--green-200);
+}
+.tb-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+.tb-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--bg-soft);
+  border: 1.5px solid transparent;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  min-width: 0;
+}
+.tb-tile:hover {
+  border-color: var(--green-300);
+  background: var(--green-50);
+}
+.tb-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tb-emoji {
+  font-size: 26px;
+  line-height: 1.1;
+}
+.tb-name {
+  font-weight: 700;
+  font-size: 13.5px;
+  line-height: 1.3;
+  flex: 1;
+}
+.tb-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.tb-status .tr-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.tb-status.s-ok {
+  color: var(--green-700);
+}
+.tb-status.s-low {
+  color: var(--orange);
+}
+.tb-status.s-out {
+  color: var(--red);
+}
+
+/* ---------- Recent orders: compact list for phones ---------- */
+.order-list {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+}
+.order-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.order-list li:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+/* grid children must be allowed to shrink, or wide tables push the page */
+.grid-2 > *,
+.grid-bottom > * {
+  min-width: 0;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1280px) {
   .grid-bottom {
@@ -343,6 +459,9 @@
   }
   .health-card {
     grid-column: span 2;
+  }
+  .tb-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 @media (max-width: 1100px) {
@@ -355,13 +474,113 @@
   }
 }
 @media (max-width: 760px) {
-  .stat-grid {
-    grid-template-columns: 1fr;
+  .stat-grid,
+  .grid-2,
+  .grid-bottom,
+  .trend-brief {
+    gap: 14px;
+    margin-bottom: 14px;
   }
   .grid-bottom {
     grid-template-columns: 1fr;
   }
   .health-card {
     grid-column: auto;
+  }
+  /* trending tiles become a swipeable row */
+  .tb-row {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    margin: 0 -22px;
+    padding: 0 22px 4px;
+    gap: 10px;
+    scrollbar-width: none;
+  }
+  .tb-row::-webkit-scrollbar {
+    display: none;
+  }
+  .tb-tile {
+    flex: 0 0 136px;
+    scroll-snap-align: start;
+    padding: 12px;
+  }
+}
+@media (max-width: 560px) {
+  /* compact 2×2 stats */
+  .stat-grid {
+    gap: 10px;
+  }
+  .stat-card {
+    padding: 14px;
+    border-radius: 20px;
+  }
+  .stat-top {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .stat-ic {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+  .stat-ic svg {
+    width: 17px;
+    height: 17px;
+  }
+  .stat-label {
+    font-size: 12.5px;
+    line-height: 1.25;
+  }
+  .stat-arrow {
+    display: none;
+  }
+  .stat-value {
+    font-size: 22px;
+  }
+  .stat-delta {
+    font-size: 11.5px;
+    margin-top: 4px;
+  }
+  .stat-body > svg {
+    display: none;
+  }
+
+  .card-head {
+    margin-bottom: 14px;
+  }
+  .big-num {
+    font-size: 22px;
+  }
+  .donut-wrap {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .donut-wrap > svg {
+    width: 170px;
+    height: 170px;
+    align-self: center;
+  }
+  .legend {
+    gap: 10px;
+  }
+
+  .tb-row {
+    margin: 0 -16px;
+    padding: 0 16px 4px;
+  }
+  .order-list {
+    display: flex;
+  }
+  .orders-table {
+    display: none;
+  }
+  .top-list li,
+  .low-list li {
+    padding: 6px 0;
+  }
+  .top-list li:hover,
+  .low-list li:hover {
+    background: none;
   }
 }

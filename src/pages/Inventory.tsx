@@ -198,21 +198,23 @@ export default function Inventory() {
       </section>
 
       <div className="inv-filters">
-        {chips.map((c) => (
-          <button
-            key={c}
-            className={'filter-chip' + (filter === c ? ' on' : '')}
-            onClick={() => setFilter(c)}
-          >
-            {c === 'Low stock' && <Icon name="alert" size={14} />}
-            {c}
-            {c === 'Low stock' && lowCount > 0 && (
-              <span className="fc-badge">{lowCount}</span>
-            )}
-          </button>
-        ))}
+        <div className="inv-chips">
+          {chips.map((c) => (
+            <button
+              key={c}
+              className={'filter-chip' + (filter === c ? ' on' : '')}
+              onClick={() => setFilter(c)}
+            >
+              {c === 'Low stock' && <Icon name="alert" size={14} />}
+              {c}
+              {c === 'Low stock' && lowCount > 0 && (
+                <span className="fc-badge">{lowCount}</span>
+              )}
+            </button>
+          ))}
+        </div>
         <button className="add-product-btn" onClick={() => setAdding(true)}>
-          <Icon name="plus" size={16} /> Add product
+          <Icon name="plus" size={16} /> <span>Add product</span>
         </button>
       </div>
 

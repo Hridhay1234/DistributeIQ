@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Topbar from '../components/Topbar'
 import Icon from '../components/Icon'
@@ -21,6 +21,20 @@ export default function SalesLog() {
   const [saving, setSaving] = useState(false)
   const [savedFlash, setSavedFlash] = useState(false)
   const [adding, setAdding] = useState(false)
+  // phones/tablets: the basket lives in a bottom sheet opened from a bar
+  const [sheetOpen, setSheetOpen] = useState(false)
+
+  useEffect(() => {
+    if (!sheetOpen) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSheetOpen(false)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prev
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [sheetOpen])
 
   // local discount overrides for this session (null = cleared)
   const [localDisc, setLocalDisc] = useState<
@@ -126,6 +140,7 @@ export default function SalesLog() {
       })
       await addSale({ items: saleItems })
       setCounts({})
+      setSheetOpen(false)
       setSavedFlash(true)
       setTimeout(() => setSavedFlash(false), 2400)
     } finally {
@@ -145,7 +160,7 @@ export default function SalesLog() {
         search={false}
       />
 
-      <div className="sl-layout">
+      <div className={'sl-layout' + (basket.length || savedFlash ? ' has-bar' : '')}>
         <section className="sl-main">
           <div className="sl-searchbar">
             <Icon name="search" size={18} />
@@ -291,8 +306,27 @@ export default function SalesLog() {
           </div>
         </section>
 
-        <aside className="sl-summary card">
-          <h2 className="section-title">Today's basket</h2>
+        {sheetOpen && (
+          <div
+            className="sl-sheet-backdrop"
+            onClick={() => setSheetOpen(false)}
+          />
+        )}
+        <aside
+          className={'sl-summary card' + (sheetOpen ? ' open' : '')}
+          aria-label="Today's basket"
+        >
+          <div className="sl-sheet-handle" />
+          <div className="sl-summary-head">
+            <h2 className="section-title">Today's basket</h2>
+            <button
+              className="sl-sheet-close"
+              onClick={() => setSheetOpen(false)}
+              aria-label="Close basket"
+            >
+              <Icon name="close" size={18} />
+            </button>
+          </div>
           {basket.length === 0 ? (
             <div className="sum-empty">
               <span className="sum-empty-ic">
@@ -369,6 +403,45 @@ export default function SalesLog() {
           </div>
         </aside>
       </div>
+
+      {(basket.length > 0 || savedFlash) && !sheetOpen && (
+        <div className={'sl-basket-bar' + (basket.length ? '' : ' saved')}>
+          {basket.length ? (
+            <>
+              <button
+                className="sl-bar-open"
+                onClick={() => setSheetOpen(true)}
+                aria-label="View basket"
+              >
+                <span className="sl-bar-ic">
+                  <Icon name="cart" size={20} />
+                  <span className="sl-bar-badge">{totalUnits}</span>
+                </span>
+                <span className="sl-bar-text">
+                  <strong>{formatINR(grandTotal)}</strong>
+                  <small>
+                    {basket.length} {basket.length === 1 ? 'item' : 'items'} ·
+                    View basket
+                  </small>
+                </span>
+                <Icon name="chevron-down" size={18} className="sl-bar-chev" />
+              </button>
+              <button
+                className="btn btn-primary sl-bar-save"
+                disabled={saving}
+                onClick={save}
+              >
+                <Icon name="check-circle" size={18} />
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </>
+          ) : (
+            <span className="sl-bar-flash">
+              <Icon name="check-circle" size={18} /> Saved! Sales recorded.
+            </span>
+          )}
+        </div>
+      )}
 
       {adding && (
         <AddProductModal

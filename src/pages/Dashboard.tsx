@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Topbar from '../components/Topbar'
 import Icon, { type IconName } from '../components/Icon'
 import Sparkline from '../components/Sparkline'
@@ -14,6 +15,8 @@ import {
   recentOrdersFor,
   topProductsBy,
 } from '../lib/analytics'
+import { mergeCatalogAndProducts } from '../lib/items'
+import { buildTrends, STATUS_LABEL, type TrendMatch } from '../lib/trends'
 import { formatINR } from '../data/mock'
 import './dashboard.css'
 
@@ -23,7 +26,7 @@ type TopSort = 'revenue' | 'units'
 type OrdersRange = 'today' | 'week' | 'all'
 
 export default function Dashboard() {
-  const { products, sales, bills, store, updateStore } = useData()
+  const { catalog, products, sales, bills, store, updateStore } = useData()
   const a = useMemo(
     () => computeAnalytics(products, sales, bills),
     [products, sales, bills],
@@ -57,6 +60,26 @@ export default function Dashboard() {
     () => recentOrdersFor(sales, ordersRange, 6),
     [sales, ordersRange],
   )
+
+  const trends = useMemo(
+    () => buildTrends(new Date(), mergeCatalogAndProducts(catalog, products)),
+    [catalog, products],
+  )
+  const trendPicks = useMemo(() => {
+    const short = (title: string) => title.split(/ [&·] /)[0]
+    const fest = trends.festivals[0]
+    const tagged = (items: TrendMatch[], n: number, tag: string) =>
+      items.slice(0, n).map((i) => ({ ...i, tag }))
+    // a mix: the next festival, the season, then national trends
+    const picks = [
+      ...(fest ? tagged(fest.items, 2, `${fest.emoji} ${short(fest.title)}`) : []),
+      ...tagged(trends.season.items, 2, `${trends.season.emoji} ${trends.season.title}`),
+      ...tagged(trends.india, 4, '🇮🇳 India'),
+    ]
+    return picks
+      .filter((i, idx) => picks.findIndex((x) => x.name === i.name) === idx)
+      .slice(0, 6)
+  }, [trends])
 
   const [tourDismissed, setTourDismissed] = useState(false)
   const showTour = Boolean(store && !store.tourCompleted) && !tourDismissed
@@ -156,6 +179,45 @@ export default function Dashboard() {
             </div>
           </article>
         ))}
+      </section>
+
+      <section className="card trend-brief">
+        <div className="card-head">
+          <div>
+            <h2 className="section-title">Trending now</h2>
+            <p className="tb-sub">
+              {trends.season.emoji} {trends.season.title} season
+              {trends.festivals[0] && (
+                <>
+                  {' · '}
+                  {trends.festivals[0].emoji} {trends.festivals[0].title}{' '}
+                  {trends.festivals[0].status === 'now' ? 'now' : 'next month'}
+                </>
+              )}
+            </p>
+          </div>
+          <Link to="/app/trends" className="tb-all">
+            View all <Icon name="chevron-right" size={16} />
+          </Link>
+        </div>
+        <div className="tb-row">
+          {trendPicks.map((i) => (
+            <Link
+              key={i.name}
+              to="/app/trends"
+              className="tb-tile"
+              title={i.reason}
+            >
+              <span className="tb-tag">{i.tag}</span>
+              <span className="tb-emoji">{i.emoji}</span>
+              <span className="tb-name">{i.name}</span>
+              <span className={'tb-status s-' + i.status}>
+                <span className="tr-status-dot" />
+                {STATUS_LABEL[i.status]}
+              </span>
+            </Link>
+          ))}
+        </div>
       </section>
 
       <section className="grid-2">
@@ -277,39 +339,55 @@ export default function Dashboard() {
             />
           </div>
           {recentOrders.length ? (
-            <div className="table-scroll">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Product</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th>Amount</th>
-                    <th>Customer</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentOrders.map((o, i) => (
-                    <tr key={o.id}>
-                      <td className="muted">{i + 1}</td>
-                      <td>
-                        <span className="cell-prod">
-                          <span className="emoji-box sm">{o.emoji}</span>
-                          {o.product}
-                        </span>
-                      </td>
-                      <td className="muted">{o.date}</td>
-                      <td>
-                        <span className="chip chip-green">{o.status}</span>
-                      </td>
-                      <td className="amt">{formatINR(o.amount)}</td>
-                      <td className="muted">{o.customer}</td>
+            <>
+              <ul className="order-list">
+                {recentOrders.map((o) => (
+                  <li key={o.id}>
+                    <span className="emoji-box sm">{o.emoji}</span>
+                    <div className="tp-meta">
+                      <span className="tp-name">{o.product}</span>
+                      <span className="tp-sold">
+                        {o.date} · {o.customer}
+                      </span>
+                    </div>
+                    <span className="tp-rev">{formatINR(o.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="table-scroll orders-table">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Product</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Amount</th>
+                      <th>Customer</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {recentOrders.map((o, i) => (
+                      <tr key={o.id}>
+                        <td className="muted">{i + 1}</td>
+                        <td>
+                          <span className="cell-prod">
+                            <span className="emoji-box sm">{o.emoji}</span>
+                            {o.product}
+                          </span>
+                        </td>
+                        <td className="muted">{o.date}</td>
+                        <td>
+                          <span className="chip chip-green">{o.status}</span>
+                        </td>
+                        <td className="amt">{formatINR(o.amount)}</td>
+                        <td className="muted">{o.customer}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : (
             <EmptyBlock text="Sales you log will show up here." />
           )}

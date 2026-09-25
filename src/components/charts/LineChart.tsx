@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 type Point = { day: string; value: number }
 
@@ -8,17 +8,35 @@ type Props = {
   highlightIndex?: number
 }
 
-/** Smooth area + line chart drawn with plain SVG (no chart lib). */
+/** Smooth area + line chart drawn with plain SVG (no chart lib). Drawn at
+ * the container's real pixel width so labels never stretch on small screens. */
 export default function LineChart({ data, height = 240, highlightIndex }: Props) {
   const gid = useId().replace(/:/g, '')
-  const W = 720
-  const H = height
-  const padX = 16
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [W, setW] = useState(720)
+
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => {
+      const w = Math.round(entry.contentRect.width)
+      if (w > 0) setW(w)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  const H = W < 480 ? Math.min(height, 190) : height
+  const padX = W < 480 ? 12 : 16
   const padTop = 24
   const padBottom = 34
 
-  const max = Math.max(...data.map((d) => d.value)) * 1.12
-  const min = Math.min(...data.map((d) => d.value)) * 0.78
+  let max = Math.max(...data.map((d) => d.value)) * 1.12
+  let min = Math.min(...data.map((d) => d.value)) * 0.78
+  if (max === min) {
+    max += 1
+    min = Math.max(0, min - 1)
+  }
   const innerW = W - padX * 2
   const innerH = H - padTop - padBottom
 
@@ -55,83 +73,88 @@ export default function LineChart({ data, height = 240, highlightIndex }: Props)
 
   const gridLines = 4
   const hi = highlightIndex ?? data.length - 2
+  const band = Math.min(52, innerW / data.length)
+  // thin out x labels so they never collide (~40px each)
+  const labelEvery = Math.max(1, Math.ceil(data.length / (innerW / 40)))
+  const showLabel = (i: number) =>
+    i === hi || (i % labelEvery === 0 && Math.abs(i - hi) >= labelEvery)
 
   return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      width="100%"
-      height={H}
-      preserveAspectRatio="none"
-      role="img"
-    >
-      <defs>
-        <linearGradient id={`area-${gid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--green-500)" stopOpacity="0.32" />
-          <stop offset="100%" stopColor="var(--green-500)" stopOpacity="0" />
-        </linearGradient>
-      </defs>
+    <div ref={wrapRef} className="line-chart">
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img">
+        <defs>
+          <linearGradient id={`area-${gid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--green-500)" stopOpacity="0.32" />
+            <stop offset="100%" stopColor="var(--green-500)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
 
-      {/* horizontal gridlines */}
-      {Array.from({ length: gridLines + 1 }).map((_, i) => {
-        const y = padTop + (innerH * i) / gridLines
-        return (
-          <line
-            key={i}
-            x1={padX}
-            x2={W - padX}
-            y1={y}
-            y2={y}
-            stroke="var(--line)"
-            strokeWidth="1"
-            strokeDasharray="4 6"
+        {/* horizontal gridlines */}
+        {Array.from({ length: gridLines + 1 }).map((_, i) => {
+          const y = padTop + (innerH * i) / gridLines
+          return (
+            <line
+              key={i}
+              x1={padX}
+              x2={W - padX}
+              y1={y}
+              y2={y}
+              stroke="var(--line)"
+              strokeWidth="1"
+              strokeDasharray="4 6"
+            />
+          )
+        })}
+
+        {/* highlight band */}
+        {hi >= 0 && (
+          <rect
+            x={xs[hi] - band / 2}
+            y={padTop}
+            width={band}
+            height={innerH}
+            rx={Math.min(14, band / 2)}
+            fill="var(--green-100)"
+            opacity="0.7"
           />
-        )
-      })}
+        )}
 
-      {/* highlight band */}
-      {hi >= 0 && (
-        <rect
-          x={xs[hi] - 26}
-          y={padTop}
-          width="52"
-          height={innerH}
-          rx="14"
-          fill="var(--green-100)"
-          opacity="0.7"
+        <path d={area} fill={`url(#area-${gid})`} />
+        <path
+          d={line}
+          fill="none"
+          stroke="var(--green-700)"
+          strokeWidth="3"
+          strokeLinecap="round"
         />
-      )}
 
-      <path d={area} fill={`url(#area-${gid})`} />
-      <path
-        d={line}
-        fill="none"
-        stroke="var(--green-700)"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
+        {/* highlight marker */}
+        {hi >= 0 && (
+          <>
+            <circle cx={xs[hi]} cy={ys[hi]} r="9" fill="#fff" />
+            <circle cx={xs[hi]} cy={ys[hi]} r="6" fill="var(--green-700)" />
+          </>
+        )}
 
-      {/* highlight marker */}
-      {hi >= 0 && (
-        <>
-          <circle cx={xs[hi]} cy={ys[hi]} r="9" fill="#fff" />
-          <circle cx={xs[hi]} cy={ys[hi]} r="6" fill="var(--green-700)" />
-        </>
-      )}
-
-      {/* x labels */}
-      {data.map((d, i) => (
-        <text
-          key={d.day}
-          x={xs[i]}
-          y={H - 10}
-          textAnchor="middle"
-          fontSize="13"
-          fontWeight={i === hi ? 700 : 500}
-          fill={i === hi ? 'var(--green-800)' : 'var(--muted)'}
-        >
-          {d.day}
-        </text>
-      ))}
-    </svg>
+        {/* x labels */}
+        {data.map((d, i) =>
+          showLabel(i) ? (
+            <text
+              key={i}
+              x={xs[i]}
+              y={H - 10}
+              textAnchor={
+                i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'
+              }
+              fontSize="13"
+              fontWeight={i === hi ? 700 : 500}
+              fill={i === hi ? 'var(--green-800)' : 'var(--muted)'}
+            >
+              {d.day}
+            </text>
+          ) : null,
+        )}
+      </svg>
+    </div>
   )
 }

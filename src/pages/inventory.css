@@ -76,9 +76,16 @@
 /* ---------- Filters ---------- */
 .inv-filters {
   display: flex;
-  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 9px;
   margin-bottom: 24px;
+}
+.inv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
 }
 .filter-chip {
   display: inline-flex;
@@ -238,18 +245,10 @@
   background: var(--green-100);
 }
 
-@media (max-width: 700px) {
-  .inv-row {
-    flex-wrap: wrap;
-  }
-  .inv-row-price {
-    flex-direction: row;
-    gap: 14px;
-  }
-}
 
 .add-product-btn {
-  margin-left: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -270,8 +269,121 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
-@media (max-width: 600px) {
+
+/* ---------- Phones & small tablets ---------- */
+@media (max-width: 760px) {
   .inv-stats {
-    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .inv-stat,
+  .inv-snapshot {
+    padding: 14px;
+    gap: 11px;
+    border-radius: 20px;
+  }
+  .inv-stat .stat-ic,
+  .snap-ic {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+  }
+  .inv-stat-val {
+    font-size: 20px;
+  }
+  .inv-stat .muted,
+  .snap-sub {
+    font-size: 12px;
+  }
+
+  /* chips scroll sideways; "Add" stays pinned on the right */
+  .inv-filters {
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .inv-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-block: 2px;
+    mask-image: linear-gradient(90deg, #000 88%, transparent);
+  }
+  .inv-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .filter-chip {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 8px 14px;
+  }
+  .add-product-btn {
+    padding: 9px 13px;
+  }
+
+  .inv-groups {
+    gap: 20px;
+  }
+  .inv-group-head {
+    margin-bottom: 10px;
+  }
+
+  /* row: [emoji | name | edit] over [prices | stepper] */
+  .inv-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      'emoji meta edit'
+      'price price count';
+    align-items: center;
+    gap: 10px 12px;
+    padding: 12px;
+  }
+  .inv-row > .emoji-box {
+    grid-area: emoji;
+  }
+  .inv-row-meta {
+    grid-area: meta;
+  }
+  .inv-edit-btn {
+    grid-area: edit;
+    align-self: start;
+    justify-self: end;
+  }
+  .inv-row-price {
+    grid-area: price;
+    flex-direction: row;
+    gap: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line-2);
+    align-self: stretch;
+    align-items: flex-start;
+  }
+  .inv-count-row {
+    grid-area: count;
+    align-self: stretch;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line-2);
+    gap: 6px;
+  }
+}
+
+@media (max-width: 560px) {
+  .add-product-btn span {
+    display: none;
+  }
+  .add-product-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 12px;
+  }
+  .inv-row-price {
+    flex-direction: column;
+    gap: 1px;
+  }
+  .inv-count-row .step-btn {
+    width: 38px;
+    height: 38px;
   }
 }

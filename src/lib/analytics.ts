@@ -22,8 +22,12 @@ export function dailyRevenue(sales: Sale[], days: number): DayPoint[] {
     const k = startOfDay(s.date)
     if (buckets.has(k)) buckets.set(k, (buckets.get(k) ?? 0) + s.totalValue)
   }
+  // a week reads best as weekdays; longer ranges repeat them, so use dates
   return [...buckets.entries()].map(([k, v]) => ({
-    day: WEEKDAYS[new Date(k).getDay()],
+    day:
+      days > 7
+        ? String(new Date(k).getDate())
+        : WEEKDAYS[new Date(k).getDay()],
     value: Math.round(v),
   }))
 }

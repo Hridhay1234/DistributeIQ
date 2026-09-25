@@ -136,7 +136,9 @@
   flex: 1;
   min-width: 0;
   padding: 30px 36px 48px;
-  animation: fadeUp 0.3s ease both;
+  /* `backwards`, not `both`: a transform left on .main would become the
+     containing block for position:fixed children (sheets, bars, modals) */
+  animation: fadeUp 0.3s ease backwards;
 }
 
 /* ---------------- Topbar (used by pages) ---------------- */
